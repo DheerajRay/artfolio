@@ -25,6 +25,7 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /MAX_API_IMAGE_BYTES/);
   assert.match(page, /\/api\/artworks\/analyze/);
   assert.match(page, /\/api\/artworks/);
+  assert.match(page, /Delete artwork/);
 });
 
 test("keeps structured OpenAI additional-note generation server-side", async () => {
@@ -43,10 +44,11 @@ test("keeps structured OpenAI additional-note generation server-side", async () 
 });
 
 test("declares persistent image and metadata storage", async () => {
-  const [hosting, schema, artworkRoute] = await Promise.all([
+  const [hosting, schema, artworkRoute, deleteRoute] = await Promise.all([
     source(".openai/hosting.json"),
     source("db/schema.ts"),
     source("app/api/artworks/route.ts"),
+    source("app/api/artworks/[id]/route.ts"),
   ]);
 
   assert.match(hosting, /"d1":\s*"DB"/);
@@ -55,4 +57,6 @@ test("declares persistent image and metadata storage", async () => {
   assert.match(schema, /classificationJson/);
   assert.match(artworkRoute, /ARTWORKS\.put/);
   assert.match(artworkRoute, /INSERT INTO artworks/);
+  assert.match(deleteRoute, /ARTWORKS\.delete/);
+  assert.match(deleteRoute, /DELETE FROM artworks/);
 });

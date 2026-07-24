@@ -85,7 +85,7 @@ async function prepareArtworkImage(file: File): Promise<File> {
 
 async function readApiPayload(response: Response) {
   const text = await response.text();
-  let payload: { error?: string; analysis?: ArtworkAnalysis; artwork?: Artwork } = {};
+  let payload: { error?: string; analysis?: ArtworkAnalysis; artwork?: Artwork; deleted?: boolean } = {};
 
   if (text) {
     try {
@@ -129,6 +129,9 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deletingArtwork, setDeletingArtwork] = useState<Artwork | null>(null);
+  const [deleteState, setDeleteState] = useState<"idle" | "deleting">("idle");
+  const [deleteError, setDeleteError] = useState("");
   const [detailsArtwork, setDetailsArtwork] = useState<Artwork | null>(null);
   const [detailsSection, setDetailsSection] = useState<DetailsSection>("description");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -178,7 +181,7 @@ export default function Home() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (dialogOpen || detailsArtwork || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+      if (dialogOpen || deletingArtwork || detailsArtwork || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
       const next = Math.max(0, Math.min(artworks.length - 1, current + direction));
@@ -186,7 +189,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [current, dialogOpen, detailsArtwork, artworks.length]);
+  }, [current, dialogOpen, deletingArtwork, detailsArtwork, artworks.length]);
 
   useEffect(() => {
     if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
@@ -212,9 +215,9 @@ export default function Home() {
   }, [viewMode, current]);
 
   useEffect(() => {
-    document.body.style.overflow = dialogOpen || detailsArtwork ? "hidden" : "";
+    document.body.style.overflow = dialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [dialogOpen, detailsArtwork]);
+  }, [dialogOpen, deletingArtwork, detailsArtwork]);
 
   useEffect(() => {
     return () => {
@@ -308,6 +311,29 @@ export default function Home() {
     } catch (error) {
       setDialogError(error instanceof Error ? error.message : "Artwork could not be published.");
       setWorkflowState("idle");
+    }
+  };
+
+  const confirmDeleteArtwork = async () => {
+    if (!deletingArtwork || deleteState === "deleting") return;
+    setDeleteError("");
+    setDeleteState("deleting");
+    try {
+      const response = await fetch(`/api/artworks/${deletingArtwork.id}`, { method: "DELETE" });
+      const payload = await readApiPayload(response);
+      if (!payload.deleted) throw new Error("The server did not confirm deletion.");
+
+      setUploadedArtworks((existing) => {
+        const remaining = existing.filter((artwork) => artwork.id !== deletingArtwork.id);
+        setCurrent((active) => Math.max(0, Math.min(active, remaining.length - 1)));
+        return remaining;
+      });
+      setDetailsArtwork(null);
+      setDeletingArtwork(null);
+      setDeleteState("idle");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Artwork could not be deleted.");
+      setDeleteState("idle");
     }
   };
 
@@ -406,6 +432,19 @@ export default function Home() {
               >
                 <span aria-hidden="true" />
               </button>
+              <button
+                className="delete-artwork-toggle"
+                type="button"
+                aria-label={`Delete ${artwork.title}`}
+                title="Delete artwork"
+                onClick={() => {
+                  setViewMode("none");
+                  setDeleteError("");
+                  setDeletingArtwork(artwork);
+                }}
+              >
+                <span aria-hidden="true" />
+              </button>
             </div>
             <div className="title-block">
               <span>{artwork.year}</span>
@@ -451,6 +490,41 @@ export default function Home() {
           </div>
         </section>
       ))}
+
+      {deletingArtwork && (
+        <div className="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-artwork-title">
+          <button
+            className="dialog-backdrop"
+            type="button"
+            onClick={() => deleteState === "idle" && setDeletingArtwork(null)}
+            aria-label="Cancel artwork deletion"
+          />
+          <div className="delete-panel">
+            <div>
+              <span>Remove from collection</span>
+              <h2 id="delete-artwork-title">Delete “{deletingArtwork.title}”?</h2>
+              <p>This permanently removes the artwork, its image, and its editorial details.</p>
+            </div>
+            {deleteError && <p className="dialog-error" role="alert">{deleteError}</p>}
+            <div className="delete-actions">
+              <button
+                type="button"
+                onClick={() => setDeletingArtwork(null)}
+                disabled={deleteState === "deleting"}
+              >
+                Keep artwork
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteArtwork}
+                disabled={deleteState === "deleting"}
+              >
+                {deleteState === "deleting" ? "Deleting…" : "Delete artwork"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {detailsArtwork && (
         <div className="editorial-overlay" role="dialog" aria-modal="true" aria-labelledby="editorial-title">
