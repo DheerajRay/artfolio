@@ -17,6 +17,45 @@ button { color: inherit; font: inherit; }
 ::selection { background: #171612; color: #f1eee6; }
 
 .presentation { width: 100%; }
+.presentation.spotlight-on,
+.presentation.spotlight-on button {
+  cursor: none;
+}
+.color-spotlight {
+  position: fixed;
+  z-index: 5;
+  left: -150px;
+  top: -150px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-500px, -500px, 0);
+  background:
+    radial-gradient(circle,
+      rgba(255, 236, 0, .9) 0%,
+      rgba(255, 222, 0, .58) 36%,
+      rgba(255, 208, 0, .24) 58%,
+      rgba(255, 208, 0, 0) 74%);
+  mix-blend-mode: hard-light;
+  transition: opacity .25s ease;
+  will-change: transform;
+}
+.color-spotlight.active {
+  backdrop-filter: saturate(1.22);
+}
+.color-spotlight > span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff8a8;
+  box-shadow: 0 0 10px rgba(255,244,82,.9);
+  transform: translate(-50%, -50%);
+}
 .art-slide {
   --slide-bg: #d94a2e;
   --slide-fg: #171612;
@@ -53,11 +92,55 @@ button { color: inherit; font: inherit; }
   width: min(370px, 34vw);
   text-align: right;
 }
+.artist-line {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 9px;
+}
 .artist-name {
   margin: 0;
   font: 600 15px var(--font-sans);
   letter-spacing: -.035em;
 }
+.spotlight-toggle {
+  position: relative;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: background .25s, color .25s, transform .25s;
+}
+.spotlight-toggle:hover { transform: rotate(18deg); }
+.spotlight-toggle[aria-pressed="true"] {
+  border-color: #f4df00;
+  background: #f4df00;
+  color: #171612;
+}
+.spotlight-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.spotlight-icon::before,
+.spotlight-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.spotlight-icon::before { width: 16px; height: 1px; }
+.spotlight-icon::after { width: 1px; height: 16px; }
 .title-block {
   margin-top: 38px;
   display: grid;
@@ -350,6 +433,13 @@ button { color: inherit; font: inherit; }
   .scroll-suggestion span { display: none; }
   .artwork-description { right: 14px; bottom: 14px; width: 68vw; }
   .artwork-description p { font-size: 10px; line-height: 1.4; }
+}
+
+@media (pointer: coarse) {
+  .spotlight-toggle,
+  .color-spotlight { display: none; }
+  .presentation.spotlight-on,
+  .presentation.spotlight-on button { cursor: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

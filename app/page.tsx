@@ -81,7 +81,9 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
 
 export default function Home() {
   const [current, setCurrent] = useState(0);
+  const [spotlightOn, setSpotlightOn] = useState(false);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
+  const spotlightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -113,8 +115,29 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [current]);
 
+  useEffect(() => {
+    if (!spotlightOn) {
+      if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
+      return;
+    }
+    const moveSpotlight = (event: PointerEvent) => {
+      if (!spotlightRef.current) return;
+      spotlightRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+      spotlightRef.current.style.opacity = "1";
+    };
+    window.addEventListener("pointermove", moveSpotlight, { passive: true });
+    return () => window.removeEventListener("pointermove", moveSpotlight);
+  }, [spotlightOn]);
+
   return (
-    <main className="presentation">
+    <main className={`presentation ${spotlightOn ? "spotlight-on" : ""}`}>
+      <div
+        ref={spotlightRef}
+        className={`color-spotlight ${spotlightOn ? "active" : ""}`}
+        aria-hidden="true"
+      >
+        <span />
+      </div>
       {artworks.map((artwork, index) => (
         <section
           key={artwork.id}
@@ -134,7 +157,19 @@ export default function Home() {
           </div>
 
           <div className="slide-top-right">
-            <p className="artist-name">Dheeraj Ray</p>
+            <div className="artist-line">
+              <p className="artist-name">Dheeraj Ray</p>
+              <button
+                className="spotlight-toggle"
+                type="button"
+                aria-label={spotlightOn ? "Turn off color spotlight" : "Turn on color spotlight"}
+                aria-pressed={spotlightOn}
+                title={spotlightOn ? "Turn off color spotlight" : "Turn on color spotlight"}
+                onClick={() => setSpotlightOn((enabled) => !enabled)}
+              >
+                <span className="spotlight-icon" aria-hidden="true" />
+              </button>
+            </div>
             <div className="title-block">
               <span>{artwork.year}</span>
               <h1>{artwork.title}</h1>
