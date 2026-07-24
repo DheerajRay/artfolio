@@ -4,6 +4,8 @@ export const artworks = sqliteTable("artworks", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  critique: text("critique").notNull().default(""),
+  classificationJson: text("classification_json").notNull().default("{}"),
   artworkDate: text("artwork_date").notNull(),
   year: text("year").notNull(),
   medium: text("medium").notNull(),

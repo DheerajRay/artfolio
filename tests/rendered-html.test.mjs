@@ -23,17 +23,19 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /\/api\/artworks/);
 });
 
-test("keeps OpenAI credentials server-side", async () => {
-  const [page, analyzeRoute] = await Promise.all([
+test("keeps structured OpenAI critique generation server-side", async () => {
+  const [page, analysisService] = await Promise.all([
     source("app/page.tsx"),
-    source("app/api/artworks/analyze/route.ts"),
+    source("app/api/artworks/_analysis.ts"),
   ]);
 
   assert.doesNotMatch(page, /OPENAI_API_KEY/);
-  assert.match(analyzeRoute, /bindings\.OPENAI_API_KEY/);
-  assert.match(analyzeRoute, /https:\/\/api\.openai\.com\/v1\/responses/);
-  assert.match(analyzeRoute, /type:\s*"input_image"/);
-  assert.match(analyzeRoute, /type:\s*"json_schema"/);
+  assert.match(analysisService, /bindings\.OPENAI_API_KEY/);
+  assert.match(analysisService, /https:\/\/api\.openai\.com\/v1\/responses/);
+  assert.match(analysisService, /type:\s*"input_image"/);
+  assert.match(analysisService, /type:\s*"json_schema"/);
+  assert.match(analysisService, /critique/);
+  assert.match(analysisService, /classification/);
 });
 
 test("declares persistent image and metadata storage", async () => {
@@ -46,6 +48,7 @@ test("declares persistent image and metadata storage", async () => {
   assert.match(hosting, /"d1":\s*"DB"/);
   assert.match(hosting, /"r2":\s*"ARTWORKS"/);
   assert.match(schema, /sqliteTable\("artworks"/);
+  assert.match(schema, /classificationJson/);
   assert.match(artworkRoute, /ARTWORKS\.put/);
   assert.match(artworkRoute, /INSERT INTO artworks/);
 });

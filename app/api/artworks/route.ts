@@ -19,6 +19,8 @@ export async function GET() {
         id,
         title,
         description,
+        critique,
+        classification_json AS classificationJson,
         artwork_date AS artworkDate,
         year,
         medium,
@@ -46,6 +48,8 @@ export async function POST(request: Request) {
     const image = formData.get("image");
     const title = String(formData.get("title") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const critique = String(formData.get("critique") || "").trim();
+    const classificationJson = String(formData.get("classification") || "{}").trim();
     const artworkDate = String(formData.get("artworkDate") || "").trim();
     const medium = String(formData.get("medium") || "Mixed media").trim();
     const background = String(formData.get("background") || "").trim();
@@ -57,8 +61,16 @@ export async function POST(request: Request) {
     if (image.size > 15 * 1024 * 1024) {
       return NextResponse.json({ error: "The image must be 15 MB or smaller." }, { status: 400 });
     }
-    if (!title || title.length > 120 || !description || description.length > 600) {
+    if (!title || title.length > 120 || !description || description.length > 1200) {
       return NextResponse.json({ error: "Add a title and a concise description." }, { status: 400 });
+    }
+    if (!critique || critique.length > 1800) {
+      return NextResponse.json({ error: "Add a concise critical review." }, { status: 400 });
+    }
+    try {
+      JSON.parse(classificationJson);
+    } catch {
+      return NextResponse.json({ error: "The artwork classification is invalid." }, { status: 400 });
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(artworkDate)) {
       return NextResponse.json({ error: "Add a valid artwork date." }, { status: 400 });
@@ -83,13 +95,15 @@ export async function POST(request: Request) {
 
     await DB.prepare(`
       INSERT INTO artworks (
-        id, title, description, artwork_date, year, medium, background,
+        id, title, description, critique, classification_json, artwork_date, year, medium, background,
         foreground, object_key, mime_type, original_name, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       title,
       description,
+      critique,
+      classificationJson,
       artworkDate,
       year,
       medium || "Mixed media",
@@ -106,6 +120,8 @@ export async function POST(request: Request) {
         id,
         title,
         description,
+        critique,
+        classificationJson,
         artworkDate,
         year,
         medium: medium || "Mixed media",

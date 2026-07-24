@@ -8,6 +8,8 @@ type Artwork = {
   year: string;
   medium: string;
   description: string;
+  critique: string;
+  classification: ArtworkClassification;
   background: string;
   foreground: string;
   imageUrl?: string;
@@ -15,9 +17,21 @@ type Artwork = {
   createdAt?: string;
 };
 
+type ArtworkClassification = {
+  discipline: string;
+  genre: string;
+  visualLanguage: string;
+  composition: string;
+  palette: string[];
+  mood: string[];
+  subjects: string[];
+};
+
 type ArtworkAnalysis = {
   title: string;
   description: string;
+  critique: string;
+  classification: ArtworkClassification;
   background: string;
   foreground: "#171612" | "#F1EEE6";
 };
@@ -113,6 +127,7 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailsArtwork, setDetailsArtwork] = useState<Artwork | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [artworkDate, setArtworkDate] = useState("");
@@ -160,7 +175,7 @@ export default function Home() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (dialogOpen || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+      if (dialogOpen || detailsArtwork || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
       const next = Math.max(0, Math.min(artworks.length - 1, current + direction));
@@ -168,7 +183,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [current, dialogOpen, artworks.length]);
+  }, [current, dialogOpen, detailsArtwork, artworks.length]);
 
   useEffect(() => {
     if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
@@ -194,9 +209,9 @@ export default function Home() {
   }, [viewMode, current]);
 
   useEffect(() => {
-    document.body.style.overflow = dialogOpen ? "hidden" : "";
+    document.body.style.overflow = dialogOpen || detailsArtwork ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [dialogOpen]);
+  }, [dialogOpen, detailsArtwork]);
 
   useEffect(() => {
     return () => {
@@ -275,6 +290,8 @@ export default function Home() {
       formData.append("medium", medium || "Mixed media");
       formData.append("title", analysis.title);
       formData.append("description", analysis.description);
+      formData.append("critique", analysis.critique);
+      formData.append("classification", JSON.stringify(analysis.classification));
       formData.append("background", analysis.background);
       formData.append("foreground", analysis.foreground);
       const response = await fetch("/api/artworks", { method: "POST", body: formData });
@@ -406,8 +423,16 @@ export default function Home() {
           </button>
 
           <div className="artwork-description">
-            <span>{artwork.medium}</span>
+            <span>
+              {artwork.medium}
+              {artwork.classification?.genre ? ` · ${artwork.classification.genre}` : ""}
+            </span>
             <p>{artwork.description}</p>
+            {artwork.critique && (
+              <button type="button" onClick={() => setDetailsArtwork(artwork)}>
+                Read critique <i aria-hidden="true">↗</i>
+              </button>
+            )}
           </div>
 
           <div className="side-progress" aria-hidden="true">
@@ -417,6 +442,77 @@ export default function Home() {
           </div>
         </section>
       ))}
+
+      {detailsArtwork && (
+        <div className="editorial-overlay" role="dialog" aria-modal="true" aria-labelledby="editorial-title">
+          <button
+            className="editorial-backdrop"
+            type="button"
+            aria-label="Close artwork review"
+            onClick={() => setDetailsArtwork(null)}
+          />
+          <article
+            className="editorial-panel"
+            style={{
+              "--panel-bg": detailsArtwork.background,
+              "--panel-fg": detailsArtwork.foreground,
+            } as React.CSSProperties}
+          >
+            <header>
+              <span>Critical notes / {detailsArtwork.year}</span>
+              <button type="button" onClick={() => setDetailsArtwork(null)}>Close ×</button>
+            </header>
+            <div className="editorial-content">
+              <section className="editorial-intro">
+                <p>Dheeraj Ray</p>
+                <h2 id="editorial-title">{detailsArtwork.title}</h2>
+                <div>
+                  <span>{detailsArtwork.medium}</span>
+                  <span>{detailsArtwork.classification?.discipline}</span>
+                </div>
+              </section>
+
+              <section className="editorial-copy">
+                <div>
+                  <span>01 / Description</span>
+                  <p>{detailsArtwork.description}</p>
+                </div>
+                <div>
+                  <span>02 / Critique</span>
+                  <p>{detailsArtwork.critique}</p>
+                </div>
+              </section>
+
+              <section className="classification-grid">
+                <div>
+                  <span>Genre</span>
+                  <p>{detailsArtwork.classification?.genre || "Unclassified"}</p>
+                </div>
+                <div>
+                  <span>Visual language</span>
+                  <p>{detailsArtwork.classification?.visualLanguage || "—"}</p>
+                </div>
+                <div>
+                  <span>Composition</span>
+                  <p>{detailsArtwork.classification?.composition || "—"}</p>
+                </div>
+                <div>
+                  <span>Palette</span>
+                  <p>{detailsArtwork.classification?.palette?.join(" · ") || "—"}</p>
+                </div>
+                <div>
+                  <span>Mood</span>
+                  <p>{detailsArtwork.classification?.mood?.join(" · ") || "—"}</p>
+                </div>
+                <div>
+                  <span>Subjects</span>
+                  <p>{detailsArtwork.classification?.subjects?.join(" · ") || "—"}</p>
+                </div>
+              </section>
+            </div>
+          </article>
+        </div>
+      )}
 
       {dialogOpen && (
         <div className="add-dialog" role="dialog" aria-modal="true" aria-labelledby="add-artwork-title">
@@ -493,10 +589,64 @@ export default function Home() {
                     <textarea
                       value={analysis.description}
                       onChange={(event) => setAnalysis({ ...analysis, description: event.target.value })}
-                      maxLength={600}
-                      rows={5}
+                      maxLength={1200}
+                      rows={6}
                     />
                   </label>
+                  <label className="field">
+                    <span>Critical review</span>
+                    <textarea
+                      value={analysis.critique}
+                      onChange={(event) => setAnalysis({ ...analysis, critique: event.target.value })}
+                      maxLength={1800}
+                      rows={8}
+                    />
+                  </label>
+                  <div className="classification-edit-grid">
+                    {([
+                      ["discipline", "Discipline"],
+                      ["genre", "Genre"],
+                      ["visualLanguage", "Visual language"],
+                      ["composition", "Composition"],
+                    ] as const).map(([key, label]) => (
+                      <label className="field" key={key}>
+                        <span>{label}</span>
+                        <input
+                          value={analysis.classification[key]}
+                          onChange={(event) => setAnalysis({
+                            ...analysis,
+                            classification: {
+                              ...analysis.classification,
+                              [key]: event.target.value,
+                            },
+                          })}
+                          maxLength={160}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  {([
+                    ["palette", "Palette"],
+                    ["mood", "Mood"],
+                    ["subjects", "Subjects"],
+                  ] as const).map(([key, label]) => (
+                    <label className="field" key={key}>
+                      <span>{label} <small>separate with commas</small></span>
+                      <input
+                        value={analysis.classification[key].join(", ")}
+                        onChange={(event) => setAnalysis({
+                          ...analysis,
+                          classification: {
+                            ...analysis.classification,
+                            [key]: event.target.value
+                              .split(",")
+                              .map((item) => item.trim())
+                              .filter(Boolean),
+                          },
+                        })}
+                      />
+                    </label>
+                  ))}
                   <div className="color-fields">
                     <label className="field">
                       <span>Page color</span>

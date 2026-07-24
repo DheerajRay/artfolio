@@ -4,6 +4,8 @@ export type ArtworkRecord = {
   id: string;
   title: string;
   description: string;
+  critique: string;
+  classificationJson: string;
   artworkDate: string;
   year: string;
   medium: string;
@@ -32,6 +34,8 @@ export async function ensureArtworksTable(db: D1Database) {
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
+      critique TEXT NOT NULL DEFAULT '',
+      classification_json TEXT NOT NULL DEFAULT '{}',
       artwork_date TEXT NOT NULL,
       year TEXT NOT NULL,
       medium TEXT NOT NULL,
@@ -43,6 +47,16 @@ export async function ensureArtworksTable(db: D1Database) {
       created_at TEXT NOT NULL
     )
   `).run();
+  const columns = await db.prepare("PRAGMA table_info(artworks)").all<{ name: string }>();
+  const columnNames = new Set((columns.results ?? []).map((column) => column.name));
+  if (!columnNames.has("critique")) {
+    await db.prepare("ALTER TABLE artworks ADD COLUMN critique TEXT NOT NULL DEFAULT ''").run();
+  }
+  if (!columnNames.has("classification_json")) {
+    await db.prepare(
+      "ALTER TABLE artworks ADD COLUMN classification_json TEXT NOT NULL DEFAULT '{}'"
+    ).run();
+  }
   await db.prepare(
     "CREATE INDEX IF NOT EXISTS artworks_created_at_idx ON artworks(created_at DESC)"
   ).run();
@@ -57,10 +71,18 @@ export function isHexColor(value: string) {
 }
 
 export function publicArtwork(record: ArtworkRecord) {
+  let classification = {};
+  try {
+    classification = JSON.parse(record.classificationJson || "{}");
+  } catch {
+    classification = {};
+  }
   return {
     id: record.id,
     title: record.title,
     description: record.description,
+    critique: record.critique || "",
+    classification,
     artworkDate: record.artworkDate,
     year: record.year,
     medium: record.medium,
