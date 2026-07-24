@@ -1,0 +1,11 @@
+{
+  "name": "NOVA / STUDIO — Living Archive",
+  "short_name": "NOVA",
+  "description": "An immersive archive of painting, digital work, and studies.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ece5d8",
+  "theme_color": "#ece5d8"
+}
