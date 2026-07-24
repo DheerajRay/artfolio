@@ -13,7 +13,7 @@ export type ArtworkClassification = {
 export type ArtworkAnalysis = {
   title: string;
   description: string;
-  critique: string;
+  additionalNotes: string;
   classification: ArtworkClassification;
   background: string;
   foreground: "#171612" | "#F1EEE6";
@@ -22,7 +22,7 @@ export type ArtworkAnalysis = {
 const analysisSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "description", "critique", "classification", "background", "foreground"],
+  required: ["title", "description", "additionalNotes", "classification", "background", "foreground"],
   properties: {
     title: {
       type: "string",
@@ -32,9 +32,9 @@ const analysisSchema = {
       type: "string",
       description: "A precise portfolio description of 70 to 110 words covering visible subject, color, form, texture, atmosphere, and spatial arrangement.",
     },
-    critique: {
+    additionalNotes: {
       type: "string",
-      description: "A professional critical reading of 100 to 160 words discussing strengths, tensions, visual hierarchy, rhythm, and the work's most productive ambiguity. Lightly witty through exact observation, never jokes or snark.",
+      description: "Professional additional notes of 100 to 160 words discussing strengths, tensions, visual hierarchy, rhythm, and the work's most productive ambiguity. Lightly witty through exact observation, never jokes or snark.",
     },
     classification: {
       type: "object",
@@ -161,7 +161,7 @@ export async function analyzeArtworkImage({
                 "Write with professional authority, clarity, and lightly dry wit: the wit must come from precise observation, never jokes, puns, snark, hype, or theatrical claims.",
                 "Ground every statement in what is visibly supported by the image.",
                 "Do not invent the artist's intention, biography, symbolism, provenance, influences, process, materials, or movement affiliation.",
-                "Keep description factual and visual; reserve interpretation and evaluation for critique.",
+                "Keep description factual and visual; reserve interpretation and evaluation for the additional notes.",
                 "Classification labels are descriptive viewing aids, not declarations of official art-historical membership.",
                 "Choose a page background matching the artwork's perimeter so the image can visually dissolve into the page.",
               ].join(" "),

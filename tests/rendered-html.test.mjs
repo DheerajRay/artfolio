@@ -23,7 +23,7 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /\/api\/artworks/);
 });
 
-test("keeps structured OpenAI critique generation server-side", async () => {
+test("keeps structured OpenAI additional-note generation server-side", async () => {
   const [page, analysisService] = await Promise.all([
     source("app/page.tsx"),
     source("app/api/artworks/_analysis.ts"),
@@ -34,7 +34,7 @@ test("keeps structured OpenAI critique generation server-side", async () => {
   assert.match(analysisService, /https:\/\/api\.openai\.com\/v1\/responses/);
   assert.match(analysisService, /type:\s*"input_image"/);
   assert.match(analysisService, /type:\s*"json_schema"/);
-  assert.match(analysisService, /critique/);
+  assert.match(analysisService, /additionalNotes/);
   assert.match(analysisService, /classification/);
 });
 

@@ -23,11 +23,11 @@ Open [http://localhost:3000](http://localhost:3000).
 The plus button opens a two-step workflow:
 
 1. Import a JPEG, PNG, or WebP and add its date and optional medium.
-2. OpenAI proposes a title, portfolio description, professional critique,
+2. OpenAI proposes a title, portfolio description, professional additional notes,
    structured classification, and page colors. Review or edit them, then
    publish the artwork to the local presentation.
 
-Each published slide keeps the description compact. Its “Read critique” action
+Each published slide keeps the description compact. Its “Additional notes” action
 opens the complete editorial record: discipline, genre, visual language,
 composition, palette, mood, and visible subjects.
 

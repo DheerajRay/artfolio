@@ -73,7 +73,7 @@ export async function POST(
     `).bind(
       analysis.title,
       analysis.description,
-      analysis.critique,
+      analysis.additionalNotes,
       classificationJson,
       analysis.background,
       analysis.foreground,
@@ -85,7 +85,7 @@ export async function POST(
         ...record,
         title: analysis.title,
         description: analysis.description,
-        critique: analysis.critique,
+        critique: analysis.additionalNotes,
         classificationJson,
         background: analysis.background,
         foreground: analysis.foreground,

@@ -8,7 +8,7 @@ type Artwork = {
   year: string;
   medium: string;
   description: string;
-  critique: string;
+  additionalNotes: string;
   classification: ArtworkClassification;
   background: string;
   foreground: string;
@@ -30,7 +30,7 @@ type ArtworkClassification = {
 type ArtworkAnalysis = {
   title: string;
   description: string;
-  critique: string;
+  additionalNotes: string;
   classification: ArtworkClassification;
   background: string;
   foreground: "#171612" | "#F1EEE6";
@@ -290,7 +290,7 @@ export default function Home() {
       formData.append("medium", medium || "Mixed media");
       formData.append("title", analysis.title);
       formData.append("description", analysis.description);
-      formData.append("critique", analysis.critique);
+      formData.append("additionalNotes", analysis.additionalNotes);
       formData.append("classification", JSON.stringify(analysis.classification));
       formData.append("background", analysis.background);
       formData.append("foreground", analysis.foreground);
@@ -428,9 +428,9 @@ export default function Home() {
               {artwork.classification?.genre ? ` · ${artwork.classification.genre}` : ""}
             </span>
             <p>{artwork.description}</p>
-            {artwork.critique && (
+            {artwork.additionalNotes && (
               <button type="button" onClick={() => setDetailsArtwork(artwork)}>
-                Read critique <i aria-hidden="true">↗</i>
+                Additional notes <i aria-hidden="true">↗</i>
               </button>
             )}
           </div>
@@ -459,7 +459,7 @@ export default function Home() {
             } as React.CSSProperties}
           >
             <header>
-              <span>Critical notes / {detailsArtwork.year}</span>
+              <span>Additional notes / {detailsArtwork.year}</span>
               <button type="button" onClick={() => setDetailsArtwork(null)}>Close ×</button>
             </header>
             <div className="editorial-content">
@@ -478,8 +478,8 @@ export default function Home() {
                   <p>{detailsArtwork.description}</p>
                 </div>
                 <div>
-                  <span>02 / Critique</span>
-                  <p>{detailsArtwork.critique}</p>
+                  <span>02 / Additional notes</span>
+                  <p>{detailsArtwork.additionalNotes}</p>
                 </div>
               </section>
 
@@ -594,10 +594,10 @@ export default function Home() {
                     />
                   </label>
                   <label className="field">
-                    <span>Critical review</span>
+                    <span>Additional notes</span>
                     <textarea
-                      value={analysis.critique}
-                      onChange={(event) => setAnalysis({ ...analysis, critique: event.target.value })}
+                      value={analysis.additionalNotes}
+                      onChange={(event) => setAnalysis({ ...analysis, additionalNotes: event.target.value })}
                       maxLength={1800}
                       rows={8}
                     />

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const image = formData.get("image");
     const title = String(formData.get("title") || "").trim();
     const description = String(formData.get("description") || "").trim();
-    const critique = String(formData.get("critique") || "").trim();
+    const additionalNotes = String(formData.get("additionalNotes") || "").trim();
     const classificationJson = String(formData.get("classification") || "{}").trim();
     const artworkDate = String(formData.get("artworkDate") || "").trim();
     const medium = String(formData.get("medium") || "Mixed media").trim();
@@ -64,8 +64,8 @@ export async function POST(request: Request) {
     if (!title || title.length > 120 || !description || description.length > 1200) {
       return NextResponse.json({ error: "Add a title and a concise description." }, { status: 400 });
     }
-    if (!critique || critique.length > 1800) {
-      return NextResponse.json({ error: "Add a concise critical review." }, { status: 400 });
+    if (!additionalNotes || additionalNotes.length > 1800) {
+      return NextResponse.json({ error: "Add concise additional notes." }, { status: 400 });
     }
     try {
       JSON.parse(classificationJson);
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       id,
       title,
       description,
-      critique,
+      additionalNotes,
       classificationJson,
       artworkDate,
       year,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         id,
         title,
         description,
-        critique,
+        critique: additionalNotes,
         classificationJson,
         artworkDate,
         year,

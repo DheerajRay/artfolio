@@ -81,7 +81,7 @@ export function publicArtwork(record: ArtworkRecord) {
     id: record.id,
     title: record.title,
     description: record.description,
-    critique: record.critique || "",
+    additionalNotes: record.critique || "",
     classification,
     artworkDate: record.artworkDate,
     year: record.year,
