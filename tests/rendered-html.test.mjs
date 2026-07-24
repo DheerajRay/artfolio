@@ -16,6 +16,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /b\.artworkDate/);
   assert.match(page, /No artworks yet/);
   assert.match(page, /Add artwork/);
+  assert.match(page, /editorial-mobile-nav/);
+  assert.match(page, /detailsSection/);
   assert.match(page, /Review with OpenAI/);
   assert.match(page, /prepareArtworkImage/);
   assert.match(page, /MAX_API_IMAGE_BYTES/);

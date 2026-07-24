@@ -613,6 +613,7 @@ button { color: inherit; font: inherit; }
   border: 1px solid currentColor;
   border-radius: 99px;
 }
+.editorial-mobile-nav { display: none; }
 .editorial-copy {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -860,22 +861,72 @@ button { color: inherit; font: inherit; }
   .artist-name { font-size: 13px; }
   .title-block { margin-top: 25px; grid-template-columns: 32px 1fr; gap: 10px; }
   .title-block h1 { font-size: 31px; }
-  .artwork-visual { inset: 15% 1% 18%; }
+  .artwork-visual { inset: 17% 1% 29%; }
   .side-progress { display: none; }
   .scroll-suggestion { left: 14px; bottom: 14px; }
   .scroll-suggestion span { display: none; }
-  .artwork-description { right: 14px; bottom: 14px; width: 68vw; }
-  .artwork-description p { font-size: 10px; line-height: 1.4; }
+  .artwork-description { right: 14px; bottom: 14px; width: 72vw; }
+  .artwork-description p {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
   .editorial-panel { width: 100%; }
-  .editorial-content { gap: 12px; padding: 15px 14px 16px; }
-  .editorial-intro { grid-template-columns: minmax(0, 1fr) auto; }
-  .editorial-intro h2 { font-size: 32px; }
-  .editorial-intro > div { max-width: 130px; }
-  .editorial-copy { gap: 12px; padding-top: 9px; }
-  .editorial-copy p { font-size: 9px; line-height: 1.36; }
-  .classification-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .classification-grid > div { min-height: 54px; padding: 7px 8px; }
-  .classification-grid p { margin-top: 6px; font-size: 9px; }
+  .editorial-content {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 16px 18px;
+  }
+  .editorial-intro { display: block; }
+  .editorial-intro > p { margin-bottom: 3px; }
+  .editorial-intro h2 { font-size: 34px; }
+  .editorial-intro > div {
+    justify-content: flex-start;
+    max-width: none;
+    margin-top: 10px;
+  }
+  .editorial-mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid currentColor;
+  }
+  .editorial-mobile-nav button {
+    padding: 9px 6px;
+    border: 0;
+    border-right: 1px solid currentColor;
+    background: transparent;
+    font: 500 9px var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    cursor: pointer;
+  }
+  .editorial-mobile-nav button:last-child { border-right: 0; }
+  .editorial-mobile-nav button[aria-pressed="true"] {
+    background: var(--panel-fg);
+    color: var(--panel-bg);
+  }
+  .editorial-copy {
+    display: block;
+    padding-top: 12px;
+  }
+  .editorial-copy.mobile-hidden { display: none; }
+  .editorial-copy > div { display: none; }
+  .editorial-copy > div.mobile-active { display: block; }
+  .editorial-copy p {
+    max-width: 36em;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .classification-grid { display: none; }
+  .classification-grid.mobile-active {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .classification-grid > div { min-height: 88px; padding: 10px 11px; }
+  .classification-grid p { margin-top: 10px; font-size: 11px; line-height: 1.35; }
   .classification-edit-grid { grid-template-columns: 1fr; }
   .artist-line { gap: 6px; }
   .spotlight-toggle,
@@ -892,10 +943,10 @@ button { color: inherit; font: inherit; }
 @media (max-height: 700px) {
   .editorial-content { gap: 10px; padding-top: 12px; padding-bottom: 12px; }
   .editorial-intro h2 { font-size: clamp(28px, 3.4vw, 42px); }
-  .editorial-copy { gap: 16px; padding-top: 8px; }
-  .editorial-copy p { margin-top: 6px; font-size: 9px; line-height: 1.32; }
-  .classification-grid > div { min-height: 48px; padding: 6px 8px; }
-  .classification-grid p { margin-top: 5px; font-size: 9px; }
+  .editorial-copy { padding-top: 8px; }
+  .editorial-copy p { margin-top: 6px; font-size: 12px; line-height: 1.42; }
+  .classification-grid > div { min-height: 68px; padding: 7px 8px; }
+  .classification-grid p { margin-top: 6px; font-size: 10px; }
 }
 
 @media (pointer: coarse) {

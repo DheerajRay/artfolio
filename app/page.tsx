@@ -36,6 +36,8 @@ type ArtworkAnalysis = {
   foreground: "#171612" | "#F1EEE6";
 };
 
+type DetailsSection = "description" | "notes" | "details";
+
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 760 * 1024;
 
@@ -128,6 +130,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsArtwork, setDetailsArtwork] = useState<Artwork | null>(null);
+  const [detailsSection, setDetailsSection] = useState<DetailsSection>("description");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [artworkDate, setArtworkDate] = useState("");
@@ -429,7 +432,13 @@ export default function Home() {
             </span>
             <p>{artwork.description}</p>
             {artwork.additionalNotes && (
-              <button type="button" onClick={() => setDetailsArtwork(artwork)}>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailsSection("description");
+                  setDetailsArtwork(artwork);
+                }}
+              >
                 Additional notes <i aria-hidden="true">↗</i>
               </button>
             )}
@@ -472,18 +481,35 @@ export default function Home() {
                 </div>
               </section>
 
-              <section className="editorial-copy">
-                <div>
+              <nav className="editorial-mobile-nav" aria-label="Additional note sections">
+                {([
+                  ["description", "Description"],
+                  ["notes", "Notes"],
+                  ["details", "Details"],
+                ] as const).map(([section, label]) => (
+                  <button
+                    key={section}
+                    type="button"
+                    aria-pressed={detailsSection === section}
+                    onClick={() => setDetailsSection(section)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+
+              <section className={`editorial-copy ${detailsSection === "details" ? "mobile-hidden" : ""}`}>
+                <div className={detailsSection === "description" ? "mobile-active" : ""}>
                   <span>01 / Description</span>
                   <p>{detailsArtwork.description}</p>
                 </div>
-                <div>
+                <div className={detailsSection === "notes" ? "mobile-active" : ""}>
                   <span>02 / Additional notes</span>
                   <p>{detailsArtwork.additionalNotes}</p>
                 </div>
               </section>
 
-              <section className="classification-grid">
+              <section className={`classification-grid ${detailsSection === "details" ? "mobile-active" : ""}`}>
                 <div>
                   <span>Genre</span>
                   <p>{detailsArtwork.classification?.genre || "Unclassified"}</p>
