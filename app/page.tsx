@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Artwork = {
   id: string;
@@ -10,22 +10,32 @@ type Artwork = {
   description: string;
   background: string;
   foreground: string;
-  variant: string;
+  variant?: string;
+  imageUrl?: string;
+  artworkDate?: string;
+  createdAt?: string;
 };
 
-const artworks: Artwork[] = [
+type ArtworkAnalysis = {
+  title: string;
+  description: string;
+  background: string;
+  foreground: "#171612" | "#F1EEE6";
+};
+
+const mockArtworks: Artwork[] = [
   {
-    id: "01",
+    id: "mock-01",
     title: "When the Sun Forgets",
     year: "2026",
     medium: "Oil, pigment and graphite",
     description: "A study of warmth disappearing slowly—held between a remembered landscape and an invented horizon.",
     background: "#D94A2E",
-    foreground: "#191511",
+    foreground: "#171612",
     variant: "sun",
   },
   {
-    id: "02",
+    id: "mock-02",
     title: "Blue Has No Distance",
     year: "2026",
     medium: "Acrylic and wax on canvas",
@@ -35,7 +45,7 @@ const artworks: Artwork[] = [
     variant: "blue",
   },
   {
-    id: "03",
+    id: "mock-03",
     title: "Things We Almost Said",
     year: "2025",
     medium: "Mixed media on linen",
@@ -45,7 +55,7 @@ const artworks: Artwork[] = [
     variant: "said",
   },
   {
-    id: "04",
+    id: "mock-04",
     title: "A Small Electric Weather",
     year: "2025",
     medium: "Digital composition",
@@ -55,20 +65,28 @@ const artworks: Artwork[] = [
     variant: "electric",
   },
   {
-    id: "05",
+    id: "mock-05",
     title: "Night Holds Everything",
     year: "2024",
     medium: "Oil and charcoal on panel",
     description: "Darkness is treated as material rather than absence: layered, scraped back, and allowed to hold the image.",
     background: "#17181C",
-    foreground: "#E8DDD0",
+    foreground: "#F1EEE6",
     variant: "night",
   },
 ];
 
 function ArtworkVisual({ artwork }: { artwork: Artwork }) {
+  if (artwork.imageUrl) {
+    return (
+      <div className="artwork-visual artwork-image" aria-label={artwork.title} role="img">
+        <img src={artwork.imageUrl} alt={artwork.title} />
+      </div>
+    );
+  }
+
   return (
-    <div className={`artwork-visual visual-${artwork.variant}`} aria-label={`Dummy artwork for ${artwork.title}`} role="img">
+    <div className={`artwork-visual visual-${artwork.variant}`} aria-label={`Mock artwork for ${artwork.title}`} role="img">
       <span className="form form-a" />
       <span className="form form-b" />
       <span className="form form-c" />
@@ -80,12 +98,34 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
 }
 
 export default function Home() {
+  const [uploadedArtworks, setUploadedArtworks] = useState<Artwork[]>([]);
+  const artworks = useMemo(() => [...uploadedArtworks, ...mockArtworks], [uploadedArtworks]);
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [artworkDate, setArtworkDate] = useState("");
+  const [medium, setMedium] = useState("");
+  const [analysis, setAnalysis] = useState<ArtworkAnalysis | null>(null);
+  const [workflowState, setWorkflowState] = useState<"idle" | "analyzing" | "saving">("idle");
+  const [dialogError, setDialogError] = useState("");
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const spotlightRef = useRef<HTMLDivElement>(null);
   const magnifierRef = useRef<HTMLDivElement>(null);
   const magnifierCanvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/artworks")
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Stored artworks are unavailable.");
+        if (!cancelled) setUploadedArtworks(payload.artworks || []);
+      })
+      .catch((error) => console.warn("Stored artwork loading failed", error));
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,18 +136,18 @@ export default function Home() {
         if (!visible) return;
         const index = Number((visible.target as HTMLElement).dataset.index);
         setCurrent(index);
-        document.documentElement.style.background = artworks[index].background;
+        document.documentElement.style.background = artworks[index]?.background || "#D94A2E";
       },
-      { threshold: [0.45, 0.7, 0.9] }
+      { threshold: [0.45, 0.7, 0.9] },
     );
 
-    slideRefs.current.forEach((slide) => slide && observer.observe(slide));
+    slideRefs.current.slice(0, artworks.length).forEach((slide) => slide && observer.observe(slide));
     return () => observer.disconnect();
-  }, []);
+  }, [artworks]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      if (dialogOpen || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
       const next = Math.max(0, Math.min(artworks.length - 1, current + direction));
@@ -115,7 +155,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [current]);
+  }, [current, dialogOpen, artworks.length]);
 
   useEffect(() => {
     if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
@@ -140,6 +180,96 @@ export default function Home() {
     return () => window.removeEventListener("pointermove", moveViewingTool);
   }, [viewMode, current]);
 
+  useEffect(() => {
+    document.body.style.overflow = dialogOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [dialogOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const resetDialog = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setArtworkDate("");
+    setMedium("");
+    setAnalysis(null);
+    setDialogError("");
+    setWorkflowState("idle");
+  };
+
+  const closeDialog = () => {
+    if (workflowState !== "idle") return;
+    setDialogOpen(false);
+    resetDialog();
+  };
+
+  const chooseImage = (file: File | null) => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(file);
+    setPreviewUrl(file ? URL.createObjectURL(file) : "");
+    setAnalysis(null);
+    setDialogError("");
+  };
+
+  const analyzeArtwork = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selectedFile || !artworkDate) {
+      setDialogError("Choose an artwork image and add its date.");
+      return;
+    }
+
+    setDialogError("");
+    setWorkflowState("analyzing");
+    try {
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+      formData.append("artworkDate", artworkDate);
+      formData.append("medium", medium);
+      const response = await fetch("/api/artworks/analyze", { method: "POST", body: formData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Artwork review failed.");
+      setAnalysis(payload.analysis);
+    } catch (error) {
+      setDialogError(error instanceof Error ? error.message : "Artwork review failed.");
+    } finally {
+      setWorkflowState("idle");
+    }
+  };
+
+  const publishArtwork = async () => {
+    if (!selectedFile || !analysis) return;
+    setDialogError("");
+    setWorkflowState("saving");
+    try {
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+      formData.append("artworkDate", artworkDate);
+      formData.append("medium", medium || "Mixed media");
+      formData.append("title", analysis.title);
+      formData.append("description", analysis.description);
+      formData.append("background", analysis.background);
+      formData.append("foreground", analysis.foreground);
+      const response = await fetch("/api/artworks", { method: "POST", body: formData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Artwork could not be published.");
+      setUploadedArtworks((existing) => [payload.artwork, ...existing]);
+      setCurrent(0);
+      setDialogOpen(false);
+      resetDialog();
+      window.setTimeout(() => slideRefs.current[0]?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch (error) {
+      setDialogError(error instanceof Error ? error.message : "Artwork could not be published.");
+      setWorkflowState("idle");
+    }
+  };
+
+  const currentArtwork = artworks[Math.min(current, artworks.length - 1)] || mockArtworks[0];
+
   return (
     <main className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""}`}>
       <div
@@ -152,14 +282,15 @@ export default function Home() {
       <div
         ref={magnifierRef}
         className={`magnifier-lens ${viewMode === "magnify" ? "active" : ""}`}
-        style={{ "--slide-bg": artworks[current].background } as React.CSSProperties}
+        style={{ "--slide-bg": currentArtwork.background } as React.CSSProperties}
         aria-hidden="true"
       >
         <div className="magnifier-canvas" ref={magnifierCanvasRef}>
-          <ArtworkVisual artwork={artworks[current]} />
+          <ArtworkVisual artwork={currentArtwork} />
         </div>
         <span className="magnifier-center" />
       </div>
+
       {artworks.map((artwork, index) => (
         <section
           key={artwork.id}
@@ -201,6 +332,15 @@ export default function Home() {
               >
                 <span className="magnifier-icon" aria-hidden="true" />
               </button>
+              <button
+                className="add-artwork-toggle"
+                type="button"
+                aria-label="Add artwork"
+                title="Add artwork"
+                onClick={() => { setViewMode("none"); setDialogOpen(true); }}
+              >
+                <span aria-hidden="true" />
+              </button>
             </div>
             <div className="title-block">
               <span>{artwork.year}</span>
@@ -232,6 +372,115 @@ export default function Home() {
           </div>
         </section>
       ))}
+
+      {dialogOpen && (
+        <div className="add-dialog" role="dialog" aria-modal="true" aria-labelledby="add-artwork-title">
+          <button className="dialog-backdrop" onClick={closeDialog} aria-label="Close add artwork dialog" />
+          <div className="dialog-panel">
+            <div className="dialog-header">
+              <div>
+                <span>{analysis ? "02 / Review" : "01 / Import"}</span>
+                <h2 id="add-artwork-title">{analysis ? "Review the details" : "Add an artwork"}</h2>
+              </div>
+              <button type="button" onClick={closeDialog} disabled={workflowState !== "idle"}>Close ×</button>
+            </div>
+
+            <div className="dialog-body">
+              <div className={`upload-preview ${previewUrl ? "has-image" : ""}`}>
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Selected artwork preview" />
+                ) : (
+                  <label htmlFor="artwork-image">
+                    <span>Choose image</span>
+                    <small>JPEG, PNG or WebP · max 15 MB</small>
+                  </label>
+                )}
+              </div>
+
+              {!analysis ? (
+                <form className="artwork-form" onSubmit={analyzeArtwork}>
+                  <label className="field file-field" htmlFor="artwork-image">
+                    <span>Artwork image</span>
+                    <input
+                      id="artwork-image"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => chooseImage(event.target.files?.[0] || null)}
+                      required
+                    />
+                    <strong>{selectedFile?.name || "Select a file"}</strong>
+                  </label>
+                  <label className="field">
+                    <span>Date of artwork</span>
+                    <input type="date" value={artworkDate} onChange={(event) => setArtworkDate(event.target.value)} required />
+                  </label>
+                  <label className="field">
+                    <span>Medium <small>optional</small></span>
+                    <input
+                      type="text"
+                      value={medium}
+                      onChange={(event) => setMedium(event.target.value)}
+                      placeholder="e.g. Oil on canvas"
+                      maxLength={120}
+                    />
+                  </label>
+                  {dialogError && <p className="dialog-error" role="alert">{dialogError}</p>}
+                  <button className="primary-dialog-action" type="submit" disabled={workflowState !== "idle"}>
+                    {workflowState === "analyzing" ? "Reviewing artwork…" : "Review with OpenAI ↗"}
+                  </button>
+                </form>
+              ) : (
+                <div className="artwork-form review-form">
+                  <label className="field">
+                    <span>Proposed title</span>
+                    <input
+                      value={analysis.title}
+                      onChange={(event) => setAnalysis({ ...analysis, title: event.target.value })}
+                      maxLength={120}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Description</span>
+                    <textarea
+                      value={analysis.description}
+                      onChange={(event) => setAnalysis({ ...analysis, description: event.target.value })}
+                      maxLength={600}
+                      rows={5}
+                    />
+                  </label>
+                  <div className="color-fields">
+                    <label className="field">
+                      <span>Page color</span>
+                      <input
+                        type="color"
+                        value={analysis.background}
+                        onChange={(event) => setAnalysis({ ...analysis, background: event.target.value })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Text color</span>
+                      <select
+                        value={analysis.foreground}
+                        onChange={(event) => setAnalysis({ ...analysis, foreground: event.target.value as ArtworkAnalysis["foreground"] })}
+                      >
+                        <option value="#171612">Dark</option>
+                        <option value="#F1EEE6">Light</option>
+                      </select>
+                    </label>
+                  </div>
+                  {dialogError && <p className="dialog-error" role="alert">{dialogError}</p>}
+                  <div className="review-actions">
+                    <button type="button" onClick={() => setAnalysis(null)} disabled={workflowState !== "idle"}>Back</button>
+                    <button className="primary-dialog-action" type="button" onClick={publishArtwork} disabled={workflowState !== "idle"}>
+                      {workflowState === "saving" ? "Publishing…" : "Publish artwork ↗"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
