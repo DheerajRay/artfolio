@@ -1,7 +1,7 @@
 {
-  "name": "NOA KLINE — Visual Artist",
-  "short_name": "NOA KLINE",
-  "description": "A dynamic personal portfolio for a visual artist and image maker.",
+  "name": "Dheeraj Ray — Selected Works",
+  "short_name": "Dheeraj Ray",
+  "description": "A full-screen presentation of artworks by Dheeraj Ray.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -1,4 +1,4 @@
-const CACHE = "noa-portfolio-v2";
+const CACHE = "dheeraj-ray-presentation-v3";
 const SHELL = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {

@@ -8,11 +8,11 @@ const sans = Manrope({ variable: "--font-sans", subsets: ["latin"], weight: ["40
 const mono = DM_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["300", "400", "500"] });
 
 export const metadata: Metadata = {
-  title: "NOA KLINE® — Visual Artist",
-  description: "A dynamic personal portfolio for visual artist and image maker NOA KLINE.",
+  title: "Dheeraj Ray — Selected Works",
+  description: "A full-screen presentation of artworks by Dheeraj Ray.",
   manifest: "/manifest.webmanifest",
-  applicationName: "NOA KLINE",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "NOA KLINE" },
+  applicationName: "Dheeraj Ray",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Dheeraj Ray" },
 };
 
 export const viewport: Viewport = {
