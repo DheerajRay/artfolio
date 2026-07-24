@@ -1,7 +1,7 @@
 # Dheeraj Ray — Artwork Portfolio
 
 A full-screen, scroll-snapped portfolio PWA. Uploaded artworks are presented
-before the temporary mock collection, with each slide adapting to the artwork's
+newest-first by artwork date, with each slide adapting to the artwork's
 background color.
 
 ## Local setup
@@ -30,8 +30,7 @@ Source images up to 15 MB are automatically prepared as a high-resolution WebP
 for reliable review and web delivery.
 
 Uploaded metadata is stored in the `DB` D1 binding and image files in the
-`ARTWORKS` R2 binding. The mock artworks remain in place until the upload flow
-has been approved.
+`ARTWORKS` R2 binding.
 
 ## Checks
 

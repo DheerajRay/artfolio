@@ -8,11 +8,13 @@ async function source(path) {
   return readFile(new URL(path, root), "utf8");
 }
 
-test("keeps mock artworks while adding the upload workflow", async () => {
+test("shows only uploaded artworks in date order", async () => {
   const page = await source("app/page.tsx");
 
-  assert.match(page, /const mockArtworks/);
-  assert.match(page, /When the Sun Forgets/);
+  assert.doesNotMatch(page, /mockArtworks|When the Sun Forgets/);
+  assert.match(page, /sortArtworksByDate/);
+  assert.match(page, /b\.artworkDate/);
+  assert.match(page, /No artworks yet/);
   assert.match(page, /Add artwork/);
   assert.match(page, /Review with OpenAI/);
   assert.match(page, /prepareArtworkImage/);

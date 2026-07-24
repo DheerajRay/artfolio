@@ -10,7 +10,6 @@ type Artwork = {
   description: string;
   background: string;
   foreground: string;
-  variant?: string;
   imageUrl?: string;
   artworkDate?: string;
   createdAt?: string;
@@ -89,83 +88,28 @@ async function readApiPayload(response: Response) {
   return payload;
 }
 
-const mockArtworks: Artwork[] = [
-  {
-    id: "mock-01",
-    title: "When the Sun Forgets",
-    year: "2026",
-    medium: "Oil, pigment and graphite",
-    description: "A study of warmth disappearing slowly—held between a remembered landscape and an invented horizon.",
-    background: "#D94A2E",
-    foreground: "#171612",
-    variant: "sun",
-  },
-  {
-    id: "mock-02",
-    title: "Blue Has No Distance",
-    year: "2026",
-    medium: "Acrylic and wax on canvas",
-    description: "Blue becomes atmosphere, object, and interruption. Part of an ongoing series about impossible depth.",
-    background: "#2338A2",
-    foreground: "#F1EEE6",
-    variant: "blue",
-  },
-  {
-    id: "mock-03",
-    title: "Things We Almost Said",
-    year: "2025",
-    medium: "Mixed media on linen",
-    description: "Fragments gather without resolving—a conversation reconstructed from gesture, pressure and erased marks.",
-    background: "#D9CFB6",
-    foreground: "#171612",
-    variant: "said",
-  },
-  {
-    id: "mock-04",
-    title: "A Small Electric Weather",
-    year: "2025",
-    medium: "Digital composition",
-    description: "A weather system built from signal and color, moving between the synthetic and the strangely familiar.",
-    background: "#C9F03A",
-    foreground: "#171612",
-    variant: "electric",
-  },
-  {
-    id: "mock-05",
-    title: "Night Holds Everything",
-    year: "2024",
-    medium: "Oil and charcoal on panel",
-    description: "Darkness is treated as material rather than absence: layered, scraped back, and allowed to hold the image.",
-    background: "#17181C",
-    foreground: "#F1EEE6",
-    variant: "night",
-  },
-];
+function sortArtworksByDate(items: Artwork[]) {
+  return [...items].sort((a, b) => {
+    const dateOrder = (b.artworkDate || `${b.year}-01-01`).localeCompare(
+      a.artworkDate || `${a.year}-01-01`,
+    );
+    if (dateOrder !== 0) return dateOrder;
+    return (b.createdAt || "").localeCompare(a.createdAt || "");
+  });
+}
 
 function ArtworkVisual({ artwork }: { artwork: Artwork }) {
-  if (artwork.imageUrl) {
-    return (
-      <div className="artwork-visual artwork-image" aria-label={artwork.title} role="img">
-        <img src={artwork.imageUrl} alt={artwork.title} />
-      </div>
-    );
-  }
-
   return (
-    <div className={`artwork-visual visual-${artwork.variant}`} aria-label={`Mock artwork for ${artwork.title}`} role="img">
-      <span className="form form-a" />
-      <span className="form form-b" />
-      <span className="form form-c" />
-      <span className="form form-d" />
-      <span className="mark mark-a" />
-      <span className="mark mark-b" />
+    <div className="artwork-visual artwork-image" aria-label={artwork.title} role="img">
+      {artwork.imageUrl && <img src={artwork.imageUrl} alt={artwork.title} />}
     </div>
   );
 }
 
 export default function Home() {
   const [uploadedArtworks, setUploadedArtworks] = useState<Artwork[]>([]);
-  const artworks = useMemo(() => [...uploadedArtworks, ...mockArtworks], [uploadedArtworks]);
+  const artworks = useMemo(() => sortArtworksByDate(uploadedArtworks), [uploadedArtworks]);
+  const [loadingArtworks, setLoadingArtworks] = useState(true);
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -189,7 +133,10 @@ export default function Home() {
         if (!response.ok) throw new Error(payload.error || "Stored artworks are unavailable.");
         if (!cancelled) setUploadedArtworks(payload.artworks || []);
       })
-      .catch((error) => console.warn("Stored artwork loading failed", error));
+      .catch((error) => console.warn("Stored artwork loading failed", error))
+      .finally(() => {
+        if (!cancelled) setLoadingArtworks(false);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -333,7 +280,7 @@ export default function Home() {
       const response = await fetch("/api/artworks", { method: "POST", body: formData });
       const payload = await readApiPayload(response);
       if (!payload.artwork) throw new Error("The published artwork was not returned.");
-      setUploadedArtworks((existing) => [payload.artwork, ...existing]);
+      setUploadedArtworks((existing) => sortArtworksByDate([...existing, payload.artwork!]));
       setCurrent(0);
       setDialogOpen(false);
       resetDialog();
@@ -344,7 +291,7 @@ export default function Home() {
     }
   };
 
-  const currentArtwork = artworks[Math.min(current, artworks.length - 1)] || mockArtworks[0];
+  const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
 
   return (
     <main className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""}`}>
@@ -355,17 +302,39 @@ export default function Home() {
       >
         <span />
       </div>
-      <div
-        ref={magnifierRef}
-        className={`magnifier-lens ${viewMode === "magnify" ? "active" : ""}`}
-        style={{ "--slide-bg": currentArtwork.background } as React.CSSProperties}
-        aria-hidden="true"
-      >
-        <div className="magnifier-canvas" ref={magnifierCanvasRef}>
-          <ArtworkVisual artwork={currentArtwork} />
+      {currentArtwork && (
+        <div
+          ref={magnifierRef}
+          className={`magnifier-lens ${viewMode === "magnify" ? "active" : ""}`}
+          style={{ "--slide-bg": currentArtwork.background } as React.CSSProperties}
+          aria-hidden="true"
+        >
+          <div className="magnifier-canvas" ref={magnifierCanvasRef}>
+            <ArtworkVisual artwork={currentArtwork} />
+          </div>
+          <span className="magnifier-center" />
         </div>
-        <span className="magnifier-center" />
-      </div>
+      )}
+
+      {artworks.length === 0 && (
+        <section className="art-slide empty-gallery" aria-label="Artwork collection">
+          <div className="slide-top-right">
+            <div className="artist-line">
+              <p className="artist-name">Dheeraj Ray</p>
+              <button
+                className="add-artwork-toggle"
+                type="button"
+                aria-label="Add artwork"
+                title="Add artwork"
+                onClick={() => setDialogOpen(true)}
+              >
+                <span aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <p>{loadingArtworks ? "Loading collection…" : "No artworks yet."}</p>
+        </section>
+      )}
 
       {artworks.map((artwork, index) => (
         <section

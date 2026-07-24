@@ -105,6 +105,19 @@ button { color: inherit; font: inherit; }
   color: var(--slide-fg);
   transition: background .45s ease;
 }
+.empty-gallery {
+  background: #f7f5ef;
+  color: #171612;
+}
+.empty-gallery > p {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  font: italic 400 clamp(28px, 4vw, 58px) var(--font-display);
+  letter-spacing: -.045em;
+}
 
 .slide-index {
   position: absolute;
