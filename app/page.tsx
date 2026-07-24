@@ -81,9 +81,11 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
 
 export default function Home() {
   const [current, setCurrent] = useState(0);
-  const [spotlightOn, setSpotlightOn] = useState(false);
+  const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const spotlightRef = useRef<HTMLDivElement>(null);
+  const magnifierRef = useRef<HTMLDivElement>(null);
+  const magnifierCanvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -116,27 +118,47 @@ export default function Home() {
   }, [current]);
 
   useEffect(() => {
-    if (!spotlightOn) {
-      if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
-      return;
-    }
-    const moveSpotlight = (event: PointerEvent) => {
-      if (!spotlightRef.current) return;
-      spotlightRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
-      spotlightRef.current.style.opacity = "1";
+    if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
+    if (magnifierRef.current) magnifierRef.current.style.opacity = "0";
+    if (viewMode === "none") return;
+
+    const moveViewingTool = (event: PointerEvent) => {
+      if (viewMode === "spotlight" && spotlightRef.current) {
+        spotlightRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+        spotlightRef.current.style.opacity = "1";
+      }
+      if (viewMode === "magnify" && magnifierRef.current && magnifierCanvasRef.current) {
+        const zoom = 1.8;
+        const radius = 150;
+        magnifierRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+        magnifierRef.current.style.opacity = "1";
+        magnifierCanvasRef.current.style.transform =
+          `translate3d(${radius - event.clientX * zoom}px, ${radius - event.clientY * zoom}px, 0) scale(${zoom})`;
+      }
     };
-    window.addEventListener("pointermove", moveSpotlight, { passive: true });
-    return () => window.removeEventListener("pointermove", moveSpotlight);
-  }, [spotlightOn]);
+    window.addEventListener("pointermove", moveViewingTool, { passive: true });
+    return () => window.removeEventListener("pointermove", moveViewingTool);
+  }, [viewMode, current]);
 
   return (
-    <main className={`presentation ${spotlightOn ? "spotlight-on" : ""}`}>
+    <main className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""}`}>
       <div
         ref={spotlightRef}
-        className={`color-spotlight ${spotlightOn ? "active" : ""}`}
+        className={`color-spotlight ${viewMode === "spotlight" ? "active" : ""}`}
         aria-hidden="true"
       >
         <span />
+      </div>
+      <div
+        ref={magnifierRef}
+        className={`magnifier-lens ${viewMode === "magnify" ? "active" : ""}`}
+        style={{ "--slide-bg": artworks[current].background } as React.CSSProperties}
+        aria-hidden="true"
+      >
+        <div className="magnifier-canvas" ref={magnifierCanvasRef}>
+          <ArtworkVisual artwork={artworks[current]} />
+        </div>
+        <span className="magnifier-center" />
       </div>
       {artworks.map((artwork, index) => (
         <section
@@ -162,12 +184,22 @@ export default function Home() {
               <button
                 className="spotlight-toggle"
                 type="button"
-                aria-label={spotlightOn ? "Turn off color spotlight" : "Turn on color spotlight"}
-                aria-pressed={spotlightOn}
-                title={spotlightOn ? "Turn off color spotlight" : "Turn on color spotlight"}
-                onClick={() => setSpotlightOn((enabled) => !enabled)}
+                aria-label={viewMode === "spotlight" ? "Turn off color spotlight" : "Turn on color spotlight"}
+                aria-pressed={viewMode === "spotlight"}
+                title={viewMode === "spotlight" ? "Turn off color spotlight" : "Turn on color spotlight"}
+                onClick={() => setViewMode((mode) => mode === "spotlight" ? "none" : "spotlight")}
               >
                 <span className="spotlight-icon" aria-hidden="true" />
+              </button>
+              <button
+                className="magnifier-toggle"
+                type="button"
+                aria-label={viewMode === "magnify" ? "Turn off magnifier" : "Turn on magnifier"}
+                aria-pressed={viewMode === "magnify"}
+                title={viewMode === "magnify" ? "Turn off magnifier" : "Turn on magnifier"}
+                onClick={() => setViewMode((mode) => mode === "magnify" ? "none" : "magnify")}
+              >
+                <span className="magnifier-icon" aria-hidden="true" />
               </button>
             </div>
             <div className="title-block">

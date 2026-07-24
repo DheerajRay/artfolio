@@ -17,8 +17,8 @@ button { color: inherit; font: inherit; }
 ::selection { background: #171612; color: #f1eee6; }
 
 .presentation { width: 100%; }
-.presentation.spotlight-on,
-.presentation.spotlight-on button {
+.presentation.viewing-tool-on,
+.presentation.viewing-tool-on button {
   cursor: none;
 }
 .color-spotlight {
@@ -32,18 +32,13 @@ button { color: inherit; font: inherit; }
   pointer-events: none;
   opacity: 0;
   transform: translate3d(-500px, -500px, 0);
-  background:
-    radial-gradient(circle,
-      rgba(255, 236, 0, .9) 0%,
-      rgba(255, 222, 0, .58) 36%,
-      rgba(255, 208, 0, .24) 58%,
-      rgba(255, 208, 0, 0) 74%);
+  background: rgba(255, 226, 0, .52);
   mix-blend-mode: hard-light;
   transition: opacity .25s ease;
   will-change: transform;
 }
 .color-spotlight.active {
-  backdrop-filter: saturate(1.22);
+  backdrop-filter: saturate(1.18);
 }
 .color-spotlight > span {
   position: absolute;
@@ -52,8 +47,48 @@ button { color: inherit; font: inherit; }
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #fff8a8;
-  box-shadow: 0 0 10px rgba(255,244,82,.9);
+  background: rgba(255,255,225,.76);
+  box-shadow: 0 0 7px rgba(255,244,82,.75);
+  transform: translate(-50%, -50%);
+}
+.magnifier-lens {
+  position: fixed;
+  z-index: 5;
+  left: -150px;
+  top: -150px;
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.62);
+  border-radius: 50%;
+  background: var(--slide-bg);
+  box-shadow: 0 12px 35px rgba(0,0,0,.15), inset 0 0 0 1px rgba(0,0,0,.18);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-500px, -500px, 0);
+  transition: opacity .2s ease;
+  will-change: transform;
+}
+.magnifier-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--slide-bg);
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.magnifier-center {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(255,255,255,.78);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.2);
   transform: translate(-50%, -50%);
 }
 .art-slide {
@@ -103,7 +138,8 @@ button { color: inherit; font: inherit; }
   font: 600 15px var(--font-sans);
   letter-spacing: -.035em;
 }
-.spotlight-toggle {
+.spotlight-toggle,
+.magnifier-toggle {
   position: relative;
   width: 27px;
   height: 27px;
@@ -114,8 +150,10 @@ button { color: inherit; font: inherit; }
   cursor: pointer;
   transition: background .25s, color .25s, transform .25s;
 }
-.spotlight-toggle:hover { transform: rotate(18deg); }
-.spotlight-toggle[aria-pressed="true"] {
+.spotlight-toggle:hover,
+.magnifier-toggle:hover { transform: rotate(18deg); }
+.spotlight-toggle[aria-pressed="true"],
+.magnifier-toggle[aria-pressed="true"] {
   border-color: #f4df00;
   background: #f4df00;
   color: #171612;
@@ -141,6 +179,27 @@ button { color: inherit; font: inherit; }
 }
 .spotlight-icon::before { width: 16px; height: 1px; }
 .spotlight-icon::after { width: 1px; height: 16px; }
+.magnifier-icon {
+  position: absolute;
+  left: 45%;
+  top: 43%;
+  width: 10px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.magnifier-icon::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 1px;
+  right: -5px;
+  bottom: -3px;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
 .title-block {
   margin-top: 38px;
   display: grid;
@@ -437,9 +496,11 @@ button { color: inherit; font: inherit; }
 
 @media (pointer: coarse) {
   .spotlight-toggle,
-  .color-spotlight { display: none; }
-  .presentation.spotlight-on,
-  .presentation.spotlight-on button { cursor: auto; }
+  .magnifier-toggle,
+  .color-spotlight,
+  .magnifier-lens { display: none; }
+  .presentation.viewing-tool-on,
+  .presentation.viewing-tool-on button { cursor: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
