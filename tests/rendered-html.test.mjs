@@ -15,6 +15,8 @@ test("keeps mock artworks while adding the upload workflow", async () => {
   assert.match(page, /When the Sun Forgets/);
   assert.match(page, /Add artwork/);
   assert.match(page, /Review with OpenAI/);
+  assert.match(page, /prepareArtworkImage/);
+  assert.match(page, /MAX_API_IMAGE_BYTES/);
   assert.match(page, /\/api\/artworks\/analyze/);
   assert.match(page, /\/api\/artworks/);
 });

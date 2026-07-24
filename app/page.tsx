@@ -23,6 +23,72 @@ type ArtworkAnalysis = {
   foreground: "#171612" | "#F1EEE6";
 };
 
+const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_API_IMAGE_BYTES = 760 * 1024;
+
+async function prepareArtworkImage(file: File): Promise<File> {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    throw new Error("Choose a JPEG, PNG, or WebP artwork image.");
+  }
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+    throw new Error("The source image must be 15 MB or smaller.");
+  }
+  if (file.size <= MAX_API_IMAGE_BYTES) return file;
+
+  const bitmap = await createImageBitmap(file);
+  try {
+    let scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
+    let quality = 0.88;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("This browser could not prepare the artwork image.");
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/webp", quality);
+      });
+      if (blob && blob.size <= MAX_API_IMAGE_BYTES) {
+        return new File([blob], file.name, {
+          type: "image/webp",
+          lastModified: file.lastModified,
+        });
+      }
+
+      if (quality > 0.68) quality -= 0.07;
+      else scale *= 0.82;
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error("The artwork could not be optimized for upload. Try a smaller image.");
+}
+
+async function readApiPayload(response: Response) {
+  const text = await response.text();
+  let payload: { error?: string; analysis?: ArtworkAnalysis; artwork?: Artwork } = {};
+
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      if (response.status === 413) {
+        throw new Error("The prepared image is still too large for the local server. Try a smaller source image.");
+      }
+      throw new Error(response.ok ? "The server returned an unreadable response." : text);
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error || `The request failed (${response.status}).`);
+  }
+  return payload;
+}
+
 const mockArtworks: Artwork[] = [
   {
     id: "mock-01",
@@ -108,7 +174,7 @@ export default function Home() {
   const [artworkDate, setArtworkDate] = useState("");
   const [medium, setMedium] = useState("");
   const [analysis, setAnalysis] = useState<ArtworkAnalysis | null>(null);
-  const [workflowState, setWorkflowState] = useState<"idle" | "analyzing" | "saving">("idle");
+  const [workflowState, setWorkflowState] = useState<"idle" | "preparing" | "analyzing" | "saving">("idle");
   const [dialogError, setDialogError] = useState("");
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const spotlightRef = useRef<HTMLDivElement>(null);
@@ -208,12 +274,22 @@ export default function Home() {
     resetDialog();
   };
 
-  const chooseImage = (file: File | null) => {
+  const chooseImage = async (file: File | null) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setSelectedFile(file);
+    setSelectedFile(null);
     setPreviewUrl(file ? URL.createObjectURL(file) : "");
     setAnalysis(null);
     setDialogError("");
+    if (!file) return;
+
+    setWorkflowState("preparing");
+    try {
+      setSelectedFile(await prepareArtworkImage(file));
+    } catch (error) {
+      setDialogError(error instanceof Error ? error.message : "The artwork image could not be prepared.");
+    } finally {
+      setWorkflowState("idle");
+    }
   };
 
   const analyzeArtwork = async (event: FormEvent) => {
@@ -231,8 +307,8 @@ export default function Home() {
       formData.append("artworkDate", artworkDate);
       formData.append("medium", medium);
       const response = await fetch("/api/artworks/analyze", { method: "POST", body: formData });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Artwork review failed.");
+      const payload = await readApiPayload(response);
+      if (!payload.analysis) throw new Error("Artwork review returned no details.");
       setAnalysis(payload.analysis);
     } catch (error) {
       setDialogError(error instanceof Error ? error.message : "Artwork review failed.");
@@ -255,8 +331,8 @@ export default function Home() {
       formData.append("background", analysis.background);
       formData.append("foreground", analysis.foreground);
       const response = await fetch("/api/artworks", { method: "POST", body: formData });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Artwork could not be published.");
+      const payload = await readApiPayload(response);
+      if (!payload.artwork) throw new Error("The published artwork was not returned.");
       setUploadedArtworks((existing) => [payload.artwork, ...existing]);
       setCurrent(0);
       setDialogOpen(false);
@@ -408,7 +484,7 @@ export default function Home() {
                       onChange={(event) => chooseImage(event.target.files?.[0] || null)}
                       required
                     />
-                    <strong>{selectedFile?.name || "Select a file"}</strong>
+                    <strong>{workflowState === "preparing" ? "Preparing image…" : selectedFile?.name || "Select a file"}</strong>
                   </label>
                   <label className="field">
                     <span>Date of artwork</span>
@@ -426,7 +502,11 @@ export default function Home() {
                   </label>
                   {dialogError && <p className="dialog-error" role="alert">{dialogError}</p>}
                   <button className="primary-dialog-action" type="submit" disabled={workflowState !== "idle"}>
-                    {workflowState === "analyzing" ? "Reviewing artwork…" : "Review with OpenAI ↗"}
+                    {workflowState === "preparing"
+                      ? "Preparing image…"
+                      : workflowState === "analyzing"
+                        ? "Reviewing artwork…"
+                        : "Review with OpenAI ↗"}
                   </button>
                 </form>
               ) : (

@@ -26,6 +26,9 @@ The plus button opens a two-step workflow:
 2. OpenAI proposes a title, description, and page colors. Review or edit them,
    then publish the artwork to the local presentation.
 
+Source images up to 15 MB are automatically prepared as a high-resolution WebP
+for reliable review and web delivery.
+
 Uploaded metadata is stored in the `DB` D1 binding and image files in the
 `ARTWORKS` R2 binding. The mock artworks remain in place until the upload flow
 has been approved.
