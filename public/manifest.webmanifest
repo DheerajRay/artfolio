@@ -1,11 +1,11 @@
 {
-  "name": "NOVA / STUDIO — Living Archive",
-  "short_name": "NOVA",
-  "description": "An immersive archive of painting, digital work, and studies.",
+  "name": "NOA KLINE — Visual Artist",
+  "short_name": "NOA KLINE",
+  "description": "A dynamic personal portfolio for a visual artist and image maker.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#ece5d8",
-  "theme_color": "#ece5d8"
+  "background_color": "#11110f",
+  "theme_color": "#11110f"
 }

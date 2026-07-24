@@ -1,4 +1,4 @@
-const CACHE = "nova-archive-v1";
+const CACHE = "noa-portfolio-v2";
 const SHELL = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
