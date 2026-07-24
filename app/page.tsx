@@ -509,30 +509,34 @@ export default function Home() {
                 </div>
               </section>
 
-              <section className={`classification-grid ${detailsSection === "details" ? "mobile-active" : ""}`}>
-                <div>
-                  <span>Genre</span>
-                  <p>{detailsArtwork.classification?.genre || "Unclassified"}</p>
+              <section className={`classification-index ${detailsSection === "details" ? "mobile-active" : ""}`}>
+                <div className="classification-primary">
+                  {([
+                    ["01", "Genre", detailsArtwork.classification?.genre || "Unclassified"],
+                    ["02", "Visual language", detailsArtwork.classification?.visualLanguage || "—"],
+                    ["03", "Composition", detailsArtwork.classification?.composition || "—"],
+                  ] as const).map(([number, label, value]) => (
+                    <div key={label}>
+                      <span>{number} / {label}</span>
+                      <p>{value}</p>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <span>Visual language</span>
-                  <p>{detailsArtwork.classification?.visualLanguage || "—"}</p>
-                </div>
-                <div>
-                  <span>Composition</span>
-                  <p>{detailsArtwork.classification?.composition || "—"}</p>
-                </div>
-                <div>
-                  <span>Palette</span>
-                  <p>{detailsArtwork.classification?.palette?.join(" · ") || "—"}</p>
-                </div>
-                <div>
-                  <span>Mood</span>
-                  <p>{detailsArtwork.classification?.mood?.join(" · ") || "—"}</p>
-                </div>
-                <div>
-                  <span>Subjects</span>
-                  <p>{detailsArtwork.classification?.subjects?.join(" · ") || "—"}</p>
+                <div className="classification-tags">
+                  {([
+                    ["Palette", detailsArtwork.classification?.palette || []],
+                    ["Mood", detailsArtwork.classification?.mood || []],
+                    ["Subjects", detailsArtwork.classification?.subjects || []],
+                  ] as const).map(([label, values]) => (
+                    <div key={label}>
+                      <span>{label}</span>
+                      <div>
+                        {values.length > 0
+                          ? values.map((value) => <i key={value}>{value}</i>)
+                          : <i>—</i>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             </div>
