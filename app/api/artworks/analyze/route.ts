@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "../../admin/_auth";
 import { analyzeArtworkImage } from "../_analysis";
-import { getBindings, isSupportedImage } from "../_shared";
+import { isSupportedImage } from "../_shared";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ error: "Owner access is required." }, { status: 401 });
+  }
   try {
     const formData = await request.formData();
     const image = formData.get("image");
@@ -25,7 +29,6 @@ export async function POST(request: Request) {
     }
 
     const analysis = await analyzeArtworkImage({
-      bindings: getBindings(),
       imageBytes: await image.arrayBuffer(),
       mimeType: image.type,
       artworkDate,

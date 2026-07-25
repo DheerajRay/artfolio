@@ -85,7 +85,13 @@ async function prepareArtworkImage(file: File): Promise<File> {
 
 async function readApiPayload(response: Response) {
   const text = await response.text();
-  let payload: { error?: string; analysis?: ArtworkAnalysis; artwork?: Artwork; deleted?: boolean } = {};
+  let payload: {
+    error?: string;
+    analysis?: ArtworkAnalysis;
+    artwork?: Artwork;
+    deleted?: boolean;
+    authorized?: boolean;
+  } = {};
 
   if (text) {
     try {
@@ -129,6 +135,12 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+  const [adminAuthorized, setAdminAuthorized] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminLoginState, setAdminLoginState] = useState<"idle" | "signing-in">("idle");
   const [deletingArtwork, setDeletingArtwork] = useState<Artwork | null>(null);
   const [deleteState, setDeleteState] = useState<"idle" | "deleting">("idle");
   const [deleteError, setDeleteError] = useState("");
@@ -159,6 +171,14 @@ export default function Home() {
         if (!cancelled) setLoadingArtworks(false);
       });
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/admin/session")
+      .then((response) => response.json())
+      .then((payload) => setAdminAuthorized(Boolean(payload.authorized)))
+      .catch(() => setAdminAuthorized(false))
+      .finally(() => setAdminChecked(true));
   }, []);
 
   useEffect(() => {
@@ -215,9 +235,9 @@ export default function Home() {
   }, [viewMode, current]);
 
   useEffect(() => {
-    document.body.style.overflow = dialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
+    document.body.style.overflow = dialogOpen || adminDialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [dialogOpen, deletingArtwork, detailsArtwork]);
+  }, [adminDialogOpen, dialogOpen, deletingArtwork, detailsArtwork]);
 
   useEffect(() => {
     return () => {
@@ -337,6 +357,28 @@ export default function Home() {
     }
   };
 
+  const signInAsOwner = async (event: FormEvent) => {
+    event.preventDefault();
+    setAdminError("");
+    setAdminLoginState("signing-in");
+    try {
+      const response = await fetch("/api/admin/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: adminPassword }),
+      });
+      const payload = await readApiPayload(response);
+      if (!payload.authorized) throw new Error("Owner access was not confirmed.");
+      setAdminAuthorized(true);
+      setAdminDialogOpen(false);
+      setAdminPassword("");
+    } catch (error) {
+      setAdminError(error instanceof Error ? error.message : "Owner sign-in failed.");
+    } finally {
+      setAdminLoginState("idle");
+    }
+  };
+
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
 
   return (
@@ -367,15 +409,27 @@ export default function Home() {
           <div className="slide-top-right">
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
-              <button
-                className="add-artwork-toggle"
-                type="button"
-                aria-label="Add artwork"
-                title="Add artwork"
-                onClick={() => setDialogOpen(true)}
-              >
-                <span aria-hidden="true" />
-              </button>
+              {adminChecked && (adminAuthorized ? (
+                <button
+                  className="add-artwork-toggle"
+                  type="button"
+                  aria-label="Add artwork"
+                  title="Add artwork"
+                  onClick={() => setDialogOpen(true)}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  className="admin-toggle"
+                  type="button"
+                  aria-label="Owner sign in"
+                  title="Owner sign in"
+                  onClick={() => { setAdminError(""); setAdminDialogOpen(true); }}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              ))}
             </div>
           </div>
           <p>{loadingArtworks ? "Loading collection…" : "No artworks yet."}</p>
@@ -423,28 +477,42 @@ export default function Home() {
               >
                 <span className="magnifier-icon" aria-hidden="true" />
               </button>
-              <button
-                className="add-artwork-toggle"
-                type="button"
-                aria-label="Add artwork"
-                title="Add artwork"
-                onClick={() => { setViewMode("none"); setDialogOpen(true); }}
-              >
-                <span aria-hidden="true" />
-              </button>
-              <button
-                className="delete-artwork-toggle"
-                type="button"
-                aria-label={`Delete ${artwork.title}`}
-                title="Delete artwork"
-                onClick={() => {
-                  setViewMode("none");
-                  setDeleteError("");
-                  setDeletingArtwork(artwork);
-                }}
-              >
-                <span aria-hidden="true" />
-              </button>
+              {adminChecked && (adminAuthorized ? (
+                <>
+                  <button
+                    className="add-artwork-toggle"
+                    type="button"
+                    aria-label="Add artwork"
+                    title="Add artwork"
+                    onClick={() => { setViewMode("none"); setDialogOpen(true); }}
+                  >
+                    <span aria-hidden="true" />
+                  </button>
+                  <button
+                    className="delete-artwork-toggle"
+                    type="button"
+                    aria-label={`Delete ${artwork.title}`}
+                    title="Delete artwork"
+                    onClick={() => {
+                      setViewMode("none");
+                      setDeleteError("");
+                      setDeletingArtwork(artwork);
+                    }}
+                  >
+                    <span aria-hidden="true" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="admin-toggle"
+                  type="button"
+                  aria-label="Owner sign in"
+                  title="Owner sign in"
+                  onClick={() => { setAdminError(""); setAdminDialogOpen(true); }}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              ))}
             </div>
             <div className="title-block">
               <span>{artwork.year}</span>
@@ -490,6 +558,46 @@ export default function Home() {
           </div>
         </section>
       ))}
+
+      {adminDialogOpen && (
+        <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title">
+          <button
+            className="dialog-backdrop"
+            type="button"
+            onClick={() => adminLoginState === "idle" && setAdminDialogOpen(false)}
+            aria-label="Close owner sign in"
+          />
+          <form className="admin-panel" onSubmit={signInAsOwner}>
+            <span>Private controls</span>
+            <h2 id="admin-dialog-title">Owner access</h2>
+            <p>Sign in to add, review, or remove artwork. Visitors can continue exploring the portfolio.</p>
+            <label className="field">
+              <span>Password</span>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                autoComplete="current-password"
+                autoFocus
+                required
+              />
+            </label>
+            {adminError && <p className="dialog-error" role="alert">{adminError}</p>}
+            <div className="admin-actions">
+              <button
+                type="button"
+                onClick={() => setAdminDialogOpen(false)}
+                disabled={adminLoginState === "signing-in"}
+              >
+                Cancel
+              </button>
+              <button type="submit" disabled={adminLoginState === "signing-in"}>
+                {adminLoginState === "signing-in" ? "Signing in…" : "Unlock controls"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {deletingArtwork && (
         <div className="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-artwork-title">

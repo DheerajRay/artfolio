@@ -154,7 +154,8 @@ button { color: inherit; font: inherit; }
 .spotlight-toggle,
 .magnifier-toggle,
 .add-artwork-toggle,
-.delete-artwork-toggle {
+.delete-artwork-toggle,
+.admin-toggle {
   position: relative;
   width: 27px;
   height: 27px;
@@ -168,7 +169,8 @@ button { color: inherit; font: inherit; }
 .spotlight-toggle:hover,
 .magnifier-toggle:hover,
 .add-artwork-toggle:hover,
-.delete-artwork-toggle:hover { transform: rotate(18deg); }
+.delete-artwork-toggle:hover,
+.admin-toggle:hover { transform: rotate(18deg); }
 .spotlight-toggle[aria-pressed="true"],
 .magnifier-toggle[aria-pressed="true"] {
   border-color: #f4df00;
@@ -259,6 +261,26 @@ button { color: inherit; font: inherit; }
   height: 2px;
   border: 1px solid currentColor;
   border-bottom: 0;
+}
+.admin-toggle > span {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  width: 9px;
+  height: 7px;
+  border: 1px solid currentColor;
+  transform: translate(-50%, -50%);
+}
+.admin-toggle > span::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: -6px;
+  width: 5px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
 }
 .title-block {
   margin-top: 38px;
@@ -893,7 +915,8 @@ button { color: inherit; font: inherit; }
   color: #a43125;
   font: 500 10px/1.5 var(--font-mono);
 }
-.delete-dialog {
+.delete-dialog,
+.admin-dialog {
   position: fixed;
   z-index: 70;
   inset: 0;
@@ -901,7 +924,8 @@ button { color: inherit; font: inherit; }
   place-items: center;
   padding: 24px;
 }
-.delete-panel {
+.delete-panel,
+.admin-panel {
   position: relative;
   z-index: 1;
   width: min(520px, calc(100vw - 32px));
@@ -949,6 +973,46 @@ button { color: inherit; font: inherit; }
   color: #f3efe5;
 }
 .delete-actions button:disabled { cursor: wait; opacity: .5; }
+.admin-panel {
+  display: grid;
+  gap: 18px;
+}
+.admin-panel > span {
+  font: 500 8px var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.admin-panel h2 {
+  margin: 0;
+  font: 400 clamp(34px, 4vw, 48px)/.92 var(--font-display);
+  letter-spacing: -.055em;
+}
+.admin-panel > p {
+  max-width: 38em;
+  margin: -4px 0 2px;
+  font: 400 13px/1.55 var(--font-sans);
+}
+.admin-panel .dialog-error { margin: -4px 0 0; }
+.admin-actions {
+  display: grid;
+  grid-template-columns: .7fr 1.3fr;
+  gap: 8px;
+}
+.admin-actions button {
+  min-height: 42px;
+  border: 1px solid #171612;
+  background: transparent;
+  color: inherit;
+  font: 500 9px var(--font-sans);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-actions button:last-child {
+  background: #171612;
+  color: #f3efe5;
+}
+.admin-actions button:disabled { cursor: wait; opacity: .5; }
 .review-form { gap: 20px; }
 .color-fields {
   display: grid;
@@ -1076,10 +1140,13 @@ button { color: inherit; font: inherit; }
   .spotlight-toggle,
   .magnifier-toggle,
   .add-artwork-toggle,
-  .delete-artwork-toggle { width: 25px; height: 25px; }
-  .delete-panel { padding: 22px 18px 18px; }
+  .delete-artwork-toggle,
+  .admin-toggle { width: 25px; height: 25px; }
+  .delete-panel,
+  .admin-panel { padding: 22px 18px 18px; }
   .delete-panel h2 { font-size: 34px; }
   .delete-actions { grid-template-columns: 1fr; }
+  .admin-actions { grid-template-columns: 1fr; }
   .add-dialog { padding: 0; }
   .dialog-panel { width: 100%; max-height: 100svh; min-height: 100svh; }
   .dialog-body { display: block; }

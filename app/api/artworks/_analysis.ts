@@ -1,5 +1,3 @@
-import { GalleryBindings } from "./_shared";
-
 export type ArtworkClassification = {
   discipline: string;
   genre: string;
@@ -122,21 +120,19 @@ function extractOutputText(response: OpenAIResponse): string {
 }
 
 export async function analyzeArtworkImage({
-  bindings,
   imageBytes,
   mimeType,
   artworkDate,
   medium,
   currentTitle,
 }: {
-  bindings: GalleryBindings;
   imageBytes: ArrayBuffer;
   mimeType: string;
   artworkDate: string;
   medium: string;
   currentTitle?: string;
 }): Promise<ArtworkAnalysis> {
-  if (!bindings.OPENAI_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not configured for this gallery.");
   }
 
@@ -144,11 +140,11 @@ export async function analyzeArtworkImage({
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${bindings.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: bindings.OPENAI_MODEL_VISION || "gpt-5.6-sol",
+      model: process.env.OPENAI_MODEL_VISION || "gpt-5.6-sol",
       reasoning: { effort: "medium" },
       input: [
         {

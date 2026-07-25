@@ -1,6 +1,6 @@
-import { getBindings } from "../../_shared";
+import { getArtworkRecord, readArtworkImage } from "../../_shared";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET(
   _request: Request,
@@ -11,19 +11,18 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const { DB, ARTWORKS } = getBindings();
-  const row = await DB.prepare(
-    "SELECT object_key AS objectKey, mime_type AS mimeType FROM artworks WHERE id = ?"
-  ).bind(id).first<{ objectKey: string; mimeType: string }>();
+  const record = await getArtworkRecord(id);
+  if (!record) return new Response("Not found", { status: 404 });
+  if (/^https:\/\//.test(record.objectKey)) {
+    return Response.redirect(record.objectKey, 302);
+  }
 
-  if (!row) return new Response("Not found", { status: 404 });
-  const object = await ARTWORKS.get(row.objectKey);
-  if (!object) return new Response("Not found", { status: 404 });
-
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("Content-Type", row.mimeType);
-  headers.set("Cache-Control", "public, max-age=31536000, immutable");
-  headers.set("ETag", object.httpEtag);
-  return new Response(object.body, { headers });
+  const image = await readArtworkImage(record);
+  if (!image) return new Response("Not found", { status: 404 });
+  return new Response(image.body, {
+    headers: {
+      "Content-Type": image.contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
 }

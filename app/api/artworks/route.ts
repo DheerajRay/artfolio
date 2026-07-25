@@ -1,40 +1,27 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "../admin/_auth";
 import {
   ArtworkRecord,
-  ensureArtworksTable,
-  getBindings,
+  deleteArtworkImage,
   isHexColor,
   isSupportedImage,
+  listArtworkRecords,
   publicArtwork,
+  saveArtworkRecord,
+  storeArtworkImage,
 } from "./_shared";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { DB } = getBindings();
-    await ensureArtworksTable(DB);
-    const result = await DB.prepare(`
-      SELECT
-        id,
-        title,
-        description,
-        critique,
-        classification_json AS classificationJson,
-        artwork_date AS artworkDate,
-        year,
-        medium,
-        background,
-        foreground,
-        object_key AS objectKey,
-        mime_type AS mimeType,
-        original_name AS originalName,
-        created_at AS createdAt
-      FROM artworks
-      ORDER BY artwork_date DESC, created_at DESC
-    `).all<ArtworkRecord>();
-
-    return NextResponse.json({ artworks: (result.results ?? []).map(publicArtwork) });
+    const records = await listArtworkRecords();
+    records.sort((a, b) => {
+      const dateOrder = b.artworkDate.localeCompare(a.artworkDate);
+      return dateOrder || b.createdAt.localeCompare(a.createdAt);
+    });
+    return NextResponse.json({ artworks: records.map(publicArtwork) });
   } catch (error) {
     console.error("Artwork list error", error);
     return NextResponse.json({ artworks: [], error: "Stored artworks are unavailable." });
@@ -42,7 +29,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  let objectKey = "";
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ error: "Owner access is required." }, { status: 401 });
+  }
+  let uploadedRecord: ArtworkRecord | null = null;
   try {
     const formData = await request.formData();
     const image = formData.get("image");
@@ -79,65 +69,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "The artwork color settings are invalid." }, { status: 400 });
     }
 
-    const { DB, ARTWORKS } = getBindings();
-    await ensureArtworksTable(DB);
-
     const id = crypto.randomUUID();
-    const extension = image.type === "image/png" ? "png" : image.type === "image/webp" ? "webp" : "jpg";
-    objectKey = `artworks/${id}.${extension}`;
     const createdAt = new Date().toISOString();
-    const year = artworkDate.slice(0, 4);
-
-    await ARTWORKS.put(objectKey, image.stream(), {
-      httpMetadata: { contentType: image.type, cacheControl: "public, max-age=31536000, immutable" },
-      customMetadata: { originalName: image.name },
-    });
-
-    await DB.prepare(`
-      INSERT INTO artworks (
-        id, title, description, critique, classification_json, artwork_date, year, medium, background,
-        foreground, object_key, mime_type, original_name, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
+    uploadedRecord = {
       id,
       title,
       description,
-      additionalNotes,
+      critique: additionalNotes,
       classificationJson,
       artworkDate,
-      year,
-      medium || "Mixed media",
+      year: artworkDate.slice(0, 4),
+      medium: medium || "Mixed media",
       background,
       foreground,
-      objectKey,
-      image.type,
-      image.name,
+      objectKey: await storeArtworkImage(image, id),
+      mimeType: image.type,
+      originalName: image.name,
       createdAt,
-    ).run();
+    };
+    await saveArtworkRecord(uploadedRecord);
 
-    return NextResponse.json({
-      artwork: publicArtwork({
-        id,
-        title,
-        description,
-        critique: additionalNotes,
-        classificationJson,
-        artworkDate,
-        year,
-        medium: medium || "Mixed media",
-        background,
-        foreground,
-        objectKey,
-        mimeType: image.type,
-        originalName: image.name,
-        createdAt,
-      }),
-    }, { status: 201 });
+    return NextResponse.json({ artwork: publicArtwork(uploadedRecord) }, { status: 201 });
   } catch (error) {
     console.error("Artwork save error", error);
-    if (objectKey) {
+    if (uploadedRecord) {
       try {
-        await getBindings().ARTWORKS.delete(objectKey);
+        await deleteArtworkImage(uploadedRecord);
       } catch (cleanupError) {
         console.error("Artwork upload cleanup failed", cleanupError);
       }

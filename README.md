@@ -34,13 +34,33 @@ composition, palette, mood, and visible subjects.
 Source images up to 15 MB are automatically prepared as a high-resolution WebP
 for reliable review and web delivery.
 
-Uploaded metadata is stored in the `DB` D1 binding and image files in the
-`ARTWORKS` R2 binding.
+Local development stores artwork records and images in the ignored `.data`
+directory. Production uses Vercel Blob for both image files and artwork records.
+
+## Vercel deployment
+
+Import the GitHub repository into Vercel as a Next.js project and connect a
+public Vercel Blob store. Configure these server-side variables for Production,
+Preview, and Development:
+
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL_VISION` (optional; defaults to `gpt-5.6-sol`)
+- `BLOB_READ_WRITE_TOKEN` (automatically added when Blob is connected)
+- `GALLERY_ADMIN_PASSWORD`
+
+The public portfolio remains available to everyone. Add, review, and delete
+controls are protected by the owner password and an HTTP-only session cookie.
+
+To migrate an existing local collection after linking the Vercel project:
+
+```bash
+vercel env pull .env.local
+npm run migrate:vercel
+```
 
 ## Checks
 
 ```bash
 npm run lint
 npm test
-npm run db:generate
 ```

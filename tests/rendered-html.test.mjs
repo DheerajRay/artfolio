@@ -35,7 +35,7 @@ test("keeps structured OpenAI additional-note generation server-side", async () 
   ]);
 
   assert.doesNotMatch(page, /OPENAI_API_KEY/);
-  assert.match(analysisService, /bindings\.OPENAI_API_KEY/);
+  assert.match(analysisService, /process\.env\.OPENAI_API_KEY/);
   assert.match(analysisService, /https:\/\/api\.openai\.com\/v1\/responses/);
   assert.match(analysisService, /type:\s*"input_image"/);
   assert.match(analysisService, /type:\s*"json_schema"/);
@@ -44,19 +44,33 @@ test("keeps structured OpenAI additional-note generation server-side", async () 
 });
 
 test("declares persistent image and metadata storage", async () => {
-  const [hosting, schema, artworkRoute, deleteRoute] = await Promise.all([
-    source(".openai/hosting.json"),
-    source("db/schema.ts"),
+  const [storage, artworkRoute, deleteRoute] = await Promise.all([
+    source("app/api/artworks/_shared.ts"),
     source("app/api/artworks/route.ts"),
     source("app/api/artworks/[id]/route.ts"),
   ]);
 
-  assert.match(hosting, /"d1":\s*"DB"/);
-  assert.match(hosting, /"r2":\s*"ARTWORKS"/);
-  assert.match(schema, /sqliteTable\("artworks"/);
-  assert.match(schema, /classificationJson/);
-  assert.match(artworkRoute, /ARTWORKS\.put/);
-  assert.match(artworkRoute, /INSERT INTO artworks/);
-  assert.match(deleteRoute, /ARTWORKS\.delete/);
-  assert.match(deleteRoute, /DELETE FROM artworks/);
+  assert.match(storage, /@vercel\/blob/);
+  assert.match(storage, /BLOB_READ_WRITE_TOKEN/);
+  assert.match(storage, /LOCAL_DATA_ROOT/);
+  assert.match(artworkRoute, /storeArtworkImage/);
+  assert.match(artworkRoute, /saveArtworkRecord/);
+  assert.match(deleteRoute, /deleteArtworkImage/);
+  assert.match(deleteRoute, /deleteArtworkRecord/);
+});
+
+test("protects portfolio mutations behind owner access", async () => {
+  const [page, auth, session, artworkRoute] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/api/admin/_auth.ts"),
+    source("app/api/admin/session/route.ts"),
+    source("app/api/artworks/route.ts"),
+  ]);
+
+  assert.match(page, /Owner access/);
+  assert.match(page, /\/api\/admin\/session/);
+  assert.match(auth, /GALLERY_ADMIN_PASSWORD/);
+  assert.match(auth, /timingSafeEqual/);
+  assert.match(session, /httpOnly:\s*true/);
+  assert.match(artworkRoute, /isAdminRequest/);
 });
