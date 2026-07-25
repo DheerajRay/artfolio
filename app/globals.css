@@ -5,9 +5,11 @@ html {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   background: #d94a2e;
+  min-height: 100%;
 }
 body {
   margin: 0;
+  min-height: 100%;
   background: #d94a2e;
   color: #171612;
   font-family: var(--font-sans), sans-serif;
@@ -96,7 +98,8 @@ button { color: inherit; font: inherit; }
   --slide-fg: #171612;
   position: relative;
   width: 100%;
-  height: 100svh;
+  height: 100vh;
+  height: 100dvh;
   min-height: 620px;
   overflow: hidden;
   scroll-snap-align: start;
@@ -1045,17 +1048,36 @@ button { color: inherit; font: inherit; }
 .review-actions .primary-dialog-action { margin: 0; }
 
 @media (max-width: 760px) {
-  .art-slide { min-height: 640px; }
-  .slide-index { left: 14px; top: 14px; }
-  .slide-top-right { right: 14px; top: 13px; width: 68vw; }
+  .art-slide {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .slide-index {
+    left: max(14px, env(safe-area-inset-left));
+    top: calc(14px + env(safe-area-inset-top));
+  }
+  .slide-top-right {
+    right: max(14px, env(safe-area-inset-right));
+    top: calc(13px + env(safe-area-inset-top));
+    width: min(68vw, calc(100vw - 100px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  }
   .artist-name { font-size: 13px; }
   .title-block { margin-top: 25px; grid-template-columns: 32px 1fr; gap: 10px; }
   .title-block h1 { font-size: 31px; }
   .artwork-visual { inset: 17% 1% 29%; }
   .side-progress { display: none; }
-  .scroll-suggestion { left: 14px; bottom: 14px; }
+  .scroll-suggestion {
+    left: max(14px, env(safe-area-inset-left));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
   .scroll-suggestion span { display: none; }
-  .artwork-description { right: 14px; bottom: 14px; width: 72vw; }
+  .artwork-description {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: min(72vw, calc(100vw - 92px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  }
   .artwork-description p {
     display: -webkit-box;
     overflow: hidden;
