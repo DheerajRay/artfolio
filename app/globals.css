@@ -608,8 +608,8 @@ button { color: inherit; font: inherit; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 42px;
-  padding: 0 22px;
+  height: calc(42px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(22px, env(safe-area-inset-right)) 0 max(22px, env(safe-area-inset-left));
   border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
   background: color-mix(in srgb, var(--panel-bg) 92%, transparent);
   font: 500 8px var(--font-sans);
@@ -628,8 +628,8 @@ button { color: inherit; font: inherit; }
   grid-template-rows: auto auto auto;
   align-content: start;
   gap: 18px;
-  height: calc(100dvh - 42px);
-  padding: 22px 28px 24px;
+  height: calc(100dvh - 42px - env(safe-area-inset-top));
+  padding: 22px max(28px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
   overflow: hidden;
 }
 .editorial-intro {
@@ -796,7 +796,11 @@ button { color: inherit; font: inherit; }
   display: flex;
   justify-content: space-between;
   align-items: start;
-  padding: 18px;
+  padding:
+    calc(18px + env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right))
+    18px
+    max(18px, env(safe-area-inset-left));
   border-bottom: 1px solid rgba(23,22,18,.22);
   background: rgba(241,238,230,.94);
   backdrop-filter: blur(10px);
@@ -1170,11 +1174,20 @@ button { color: inherit; font: inherit; }
   .delete-actions { grid-template-columns: 1fr; }
   .admin-actions { grid-template-columns: 1fr; }
   .add-dialog { padding: 0; }
-  .dialog-panel { width: 100%; max-height: 100svh; min-height: 100svh; }
+  .dialog-panel {
+    width: 100%;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
   .dialog-body { display: block; }
-  .upload-preview { min-height: 42svh; max-height: 48svh; }
-  .upload-preview img { height: 46svh; }
-  .artwork-form { min-height: 52svh; }
+  .upload-preview { min-height: 42dvh; max-height: 48dvh; }
+  .upload-preview img { height: 46dvh; }
+  .artwork-form {
+    min-height: 52dvh;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-height: 700px) {

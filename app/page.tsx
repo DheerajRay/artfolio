@@ -39,7 +39,20 @@ type ArtworkAnalysis = {
 type DetailsSection = "description" | "notes" | "details";
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
-const MAX_API_IMAGE_BYTES = 760 * 1024;
+const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
+
+async function encodeCanvasImage(
+  canvas: HTMLCanvasElement,
+  quality: number,
+): Promise<{ blob: Blob; type: "image/webp" | "image/jpeg" } | null> {
+  for (const type of ["image/webp", "image/jpeg"] as const) {
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, type, quality);
+    });
+    if (blob && blob.type === type) return { blob, type };
+  }
+  return null;
+}
 
 async function prepareArtworkImage(file: File): Promise<File> {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -52,10 +65,10 @@ async function prepareArtworkImage(file: File): Promise<File> {
 
   const bitmap = await createImageBitmap(file);
   try {
-    let scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
-    let quality = 0.88;
+    let scale = Math.min(1, 2600 / Math.max(bitmap.width, bitmap.height));
+    let quality = 0.9;
 
-    for (let attempt = 0; attempt < 8; attempt += 1) {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(bitmap.width * scale));
       canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -63,18 +76,22 @@ async function prepareArtworkImage(file: File): Promise<File> {
       if (!context) throw new Error("This browser could not prepare the artwork image.");
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/webp", quality);
-      });
-      if (blob && blob.size <= MAX_API_IMAGE_BYTES) {
-        return new File([blob], file.name, {
-          type: "image/webp",
+      const encoded = await encodeCanvasImage(canvas, quality);
+      if (!encoded) {
+        throw new Error("This browser could not encode the artwork image.");
+      }
+      if (encoded.blob.size <= MAX_API_IMAGE_BYTES) {
+        const extension = encoded.type === "image/webp" ? "webp" : "jpg";
+        const outputName = file.name.replace(/\.[^.]+$/, "") || "artwork";
+        return new File([encoded.blob], `${outputName}.${extension}`, {
+          type: encoded.type,
           lastModified: file.lastModified,
         });
       }
 
-      if (quality > 0.68) quality -= 0.07;
-      else scale *= 0.82;
+      const targetRatio = Math.sqrt(MAX_API_IMAGE_BYTES / encoded.blob.size);
+      scale *= Math.max(0.55, Math.min(0.86, targetRatio * 0.94));
+      quality = Math.max(0.56, quality - 0.06);
     }
   } finally {
     bitmap.close();
