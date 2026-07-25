@@ -8,11 +8,19 @@ const sans = Manrope({ variable: "--font-sans", subsets: ["latin"], weight: ["40
 const mono = DM_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["300", "400", "500"] });
 
 export const metadata: Metadata = {
-  title: "Dheeraj Ray — Selected Works",
+  title: "Artfolio — Dheeraj Ray",
   description: "A full-screen presentation of artworks by Dheeraj Ray.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Dheeraj Ray",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Dheeraj Ray" },
+  applicationName: "Artfolio",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Artfolio" },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {

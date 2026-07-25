@@ -1,11 +1,26 @@
 {
-  "name": "Dheeraj Ray — Selected Works",
-  "short_name": "Dheeraj Ray",
+  "id": "/",
+  "name": "Artfolio",
+  "short_name": "Artfolio",
   "description": "A full-screen presentation of artworks by Dheeraj Ray.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#11110f",
-  "theme_color": "#11110f"
+  "theme_color": "#11110f",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

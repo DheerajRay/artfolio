@@ -1,5 +1,11 @@
-const CACHE = "dheeraj-ray-presentation-v5";
-const SHELL = ["/", "/manifest.webmanifest"];
+const CACHE = "artfolio-presentation-v6";
+const SHELL = [
+  "/",
+  "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/apple-touch-icon.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));

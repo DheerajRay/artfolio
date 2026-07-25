@@ -38,6 +38,26 @@ test("keeps mobile PWA dialogs inside safe areas", async () => {
   assert.match(styles, /\.dialog-panel[\s\S]*100dvh/);
 });
 
+test("declares Artfolio install metadata and icons", async () => {
+  const [layout, manifest] = await Promise.all([
+    source("app/layout.tsx"),
+    source("public/manifest.webmanifest"),
+  ]);
+  const installManifest = JSON.parse(manifest);
+
+  assert.match(layout, /applicationName:\s*"Artfolio"/);
+  assert.match(layout, /apple-touch-icon\.png/);
+  assert.equal(installManifest.name, "Artfolio");
+  assert.equal(installManifest.short_name, "Artfolio");
+  assert.deepEqual(
+    installManifest.icons.map(({ sizes, purpose }) => ({ sizes, purpose })),
+    [
+      { sizes: "192x192", purpose: "any" },
+      { sizes: "512x512", purpose: "any maskable" },
+    ],
+  );
+});
+
 test("keeps structured OpenAI additional-note generation server-side", async () => {
   const [page, analysisService] = await Promise.all([
     source("app/page.tsx"),
