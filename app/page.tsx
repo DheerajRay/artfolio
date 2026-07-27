@@ -174,6 +174,7 @@ export default function Home() {
   const [dialogError, setDialogError] = useState("");
   const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
+  const slideshowIndexRef = useRef(0);
   const magnifierRef = useRef<HTMLDivElement>(null);
   const magnifierCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -259,10 +260,12 @@ export default function Home() {
   useEffect(() => {
     if (!slideshowActive || artworks.length < 2) return;
     const timer = window.setInterval(() => {
-      setCurrent((active) => {
-        const next = (active + 1) % artworks.length;
-        slideRefs.current[next]?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return next;
+      const next = (slideshowIndexRef.current + 1) % artworks.length;
+      slideshowIndexRef.current = next;
+      setCurrent(next);
+      presentationRef.current?.scrollTo({
+        top: slideRefs.current[next]?.offsetTop || 0,
+        behavior: "smooth",
       });
     }, SLIDESHOW_DELAY_MS);
     return () => window.clearInterval(timer);
@@ -415,13 +418,18 @@ export default function Home() {
 
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
 
-  const startSlideshow = async () => {
+  const startSlideshow = async (startIndex: number) => {
     if (!presentationRef.current || artworks.length === 0) return;
     setViewMode("none");
+    slideshowIndexRef.current = startIndex;
+    setCurrent(startIndex);
     try {
       await presentationRef.current.requestFullscreen();
       setSlideshowActive(true);
-      slideRefs.current[current]?.scrollIntoView({ block: "start" });
+      presentationRef.current.scrollTo({
+        top: slideRefs.current[startIndex]?.offsetTop || 0,
+        behavior: "auto",
+      });
     } catch (error) {
       console.warn("Fullscreen slideshow could not start", error);
       setSlideshowActive(false);
@@ -505,7 +513,7 @@ export default function Home() {
                 type="button"
                 aria-label="Start fullscreen slideshow"
                 title="Start fullscreen slideshow"
-                onClick={startSlideshow}
+                onClick={() => startSlideshow(index)}
               >
                 <span className="slideshow-icon" aria-hidden="true" />
               </button>
