@@ -31,11 +31,17 @@ test("shows only uploaded artworks in date order", async () => {
 });
 
 test("keeps mobile PWA dialogs inside safe areas", async () => {
-  const styles = await source("app/globals.css");
+  const [page, styles] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/globals.css"),
+  ]);
 
   assert.match(styles, /\.editorial-panel > header[\s\S]*safe-area-inset-top/);
   assert.match(styles, /\.dialog-header[\s\S]*safe-area-inset-top/);
   assert.match(styles, /\.dialog-panel[\s\S]*100dvh/);
+  assert.match(styles, /\.field input,[\s\S]*font-size:\s*16px/);
+  assert.match(page, /ai-review-loading/);
+  assert.match(page, /role="status"/);
 });
 
 test("declares Artfolio install metadata and icons", async () => {

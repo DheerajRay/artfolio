@@ -755,6 +755,25 @@ export default function Home() {
               <button type="button" onClick={closeDialog} disabled={workflowState !== "idle"}>Close ×</button>
             </div>
 
+            {workflowState === "analyzing" ? (
+              <div className="ai-review-loading" role="status" aria-live="polite">
+                <div className="ai-review-mark" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div>
+                  <span>OpenAI review in progress</span>
+                  <h3>Looking closely at the work</h3>
+                  <p>Reading its composition, visual language, palette, and the details that reward a second look.</p>
+                </div>
+                <div className="ai-review-pulse" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
+            ) : (
             <div className="dialog-body">
               <div className={`upload-preview ${previewUrl ? "has-image" : ""}`}>
                 {previewUrl ? (
@@ -798,9 +817,7 @@ export default function Home() {
                   <button className="primary-dialog-action" type="submit" disabled={workflowState !== "idle"}>
                     {workflowState === "preparing"
                       ? "Preparing image…"
-                      : workflowState === "analyzing"
-                        ? "Reviewing artwork…"
-                        : "Review with OpenAI ↗"}
+                      : "Review with OpenAI ↗"}
                   </button>
                 </form>
               ) : (
@@ -906,6 +923,7 @@ export default function Home() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       )}

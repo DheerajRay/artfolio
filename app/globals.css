@@ -829,6 +829,104 @@ button { color: inherit; font: inherit; }
   grid-template-columns: 1.15fr .85fr;
   min-height: 570px;
 }
+.ai-review-loading {
+  min-height: 570px;
+  display: grid;
+  grid-template-rows: 1fr auto auto 1fr;
+  place-items: center;
+  align-content: center;
+  gap: 24px;
+  padding: 48px 24px;
+  overflow: hidden;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(223, 164, 34, .11), transparent 28%),
+    #f1eee6;
+}
+.ai-review-loading > div:nth-child(2) {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.ai-review-loading span {
+  font: 500 8px var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.ai-review-loading h3 {
+  margin: 0;
+  font: 400 clamp(38px, 5vw, 64px)/.92 var(--font-display);
+  letter-spacing: -.05em;
+}
+.ai-review-loading p {
+  max-width: 40em;
+  margin: 0;
+  font: 400 12px/1.55 var(--font-sans);
+}
+.ai-review-mark {
+  position: relative;
+  align-self: end;
+  width: 112px;
+  height: 112px;
+}
+.ai-review-mark::before,
+.ai-review-mark::after,
+.ai-review-mark i {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+}
+.ai-review-mark::before {
+  width: 76px;
+  height: 76px;
+  border: 1px solid currentColor;
+  transform: translate(-50%, -50%);
+  opacity: .18;
+}
+.ai-review-mark::after {
+  width: 16px;
+  height: 16px;
+  background: #dfa422;
+  transform: translate(-50%, -50%);
+}
+.ai-review-mark i {
+  width: 104px;
+  height: 36px;
+  border: 1px solid currentColor;
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: review-orbit 2.8s linear infinite;
+}
+.ai-review-mark i:nth-child(2) {
+  animation-direction: reverse;
+  animation-duration: 3.7s;
+  animation-delay: -1.2s;
+}
+.ai-review-mark i:nth-child(3) {
+  animation-duration: 4.6s;
+  animation-delay: -2.1s;
+}
+@keyframes review-orbit {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.ai-review-pulse {
+  display: flex;
+  gap: 7px;
+}
+.ai-review-pulse i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: review-pulse 1.25s ease-in-out infinite;
+}
+.ai-review-pulse i:nth-child(2) { animation-delay: .16s; }
+.ai-review-pulse i:nth-child(3) { animation-delay: .32s; }
+@keyframes review-pulse {
+  0%, 70%, 100% { opacity: .2; transform: translateY(0); }
+  35% { opacity: 1; transform: translateY(-4px); }
+}
 .upload-preview {
   min-height: 570px;
   display: grid;
@@ -1182,6 +1280,21 @@ button { color: inherit; font: inherit; }
     min-height: 100dvh;
   }
   .dialog-body { display: block; }
+  .ai-review-loading {
+    min-height: calc(100dvh - 132px - env(safe-area-inset-top));
+    padding:
+      34px
+      max(22px, env(safe-area-inset-right))
+      calc(34px + env(safe-area-inset-bottom))
+      max(22px, env(safe-area-inset-left));
+  }
+  .ai-review-loading h3 { font-size: 42px; }
+  .field input,
+  .field textarea,
+  .field select {
+    font-size: 16px;
+  }
+  .file-field strong { font-size: 16px; }
   .upload-preview { min-height: 42dvh; max-height: 48dvh; }
   .upload-preview img { height: 46dvh; }
   .artwork-form {
@@ -1213,4 +1326,6 @@ button { color: inherit; font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
+  .ai-review-mark i,
+  .ai-review-pulse i { animation: none; }
 }
