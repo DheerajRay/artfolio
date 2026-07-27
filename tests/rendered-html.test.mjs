@@ -88,6 +88,10 @@ test("keeps structured OpenAI additional-note generation server-side", async () 
   assert.match(analysisService, /type:\s*"json_schema"/);
   assert.match(analysisService, /additionalNotes/);
   assert.match(analysisService, /classification/);
+  assert.match(analysisService, /MAX_ANALYSIS_ATTEMPTS = 2/);
+  assert.match(analysisService, /MAX_ANALYSIS_OUTPUT_TOKENS = 4_000/);
+  assert.match(analysisService, /result\.status === "incomplete"/);
+  assert.match(analysisService, /The artwork review was incomplete\. Please try again\./);
 });
 
 test("declares persistent image and metadata storage", async () => {

@@ -92,6 +92,10 @@ const analysisSchema = {
 };
 
 type OpenAIResponse = {
+  status?: string;
+  incomplete_details?: {
+    reason?: string | null;
+  } | null;
   output_text?: unknown;
   output?: Array<{
     content?: Array<{
@@ -101,6 +105,9 @@ type OpenAIResponse = {
     }>;
   }>;
 };
+
+const MAX_ANALYSIS_ATTEMPTS = 2;
+const MAX_ANALYSIS_OUTPUT_TOKENS = 4_000;
 
 function extractOutputText(response: OpenAIResponse): string {
   if (typeof response.output_text === "string" && response.output_text.trim()) {
@@ -137,69 +144,91 @@ export async function analyzeArtworkImage({
   }
 
   const dataUrl = `data:${mimeType};base64,${Buffer.from(imageBytes).toString("base64")}`;
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL_VISION || "gpt-5.6-sol",
-      reasoning: { effort: "medium" },
-      input: [
-        {
-          role: "system",
-          content: [
-            {
-              type: "input_text",
-              text: [
-                "You are a senior contemporary-art critic and portfolio editor.",
-                "Write with professional authority, clarity, and lightly dry wit: the wit must come from precise observation, never jokes, puns, snark, hype, or theatrical claims.",
-                "Ground every statement in what is visibly supported by the image.",
-                "Do not invent the artist's intention, biography, symbolism, provenance, influences, process, materials, or movement affiliation.",
-                "Keep description factual and visual; reserve interpretation and evaluation for the additional notes.",
-                "Classification labels are descriptive viewing aids, not declarations of official art-historical membership.",
-                "Choose a page background matching the artwork's perimeter so the image can visually dissolve into the page.",
-              ].join(" "),
-            },
-          ],
-        },
-        {
-          role: "user",
-          content: [
-            { type: "input_image", image_url: dataUrl, detail: "high" },
-            {
-              type: "input_text",
-              text: [
-                `Artwork date: ${artworkDate}.`,
-                `Artist-provided medium: ${medium || "Not specified"}.`,
-                currentTitle
-                  ? `Current portfolio title: ${currentTitle}. Retain it unless a materially stronger title is clearly justified by the image.`
-                  : "Propose a portfolio title.",
-                "Return the complete editorial record.",
-              ].join(" "),
-            },
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "artwork_editorial_record",
-          strict: true,
-          schema: analysisSchema,
-        },
+  const requestBody = {
+    model: process.env.OPENAI_MODEL_VISION || "gpt-5.6-sol",
+    reasoning: { effort: "medium" },
+    input: [
+      {
+        role: "system",
+        content: [
+          {
+            type: "input_text",
+            text: [
+              "You are a senior contemporary-art critic and portfolio editor.",
+              "Write with professional authority, clarity, and lightly dry wit: the wit must come from precise observation, never jokes, puns, snark, hype, or theatrical claims.",
+              "Ground every statement in what is visibly supported by the image.",
+              "Do not invent the artist's intention, biography, symbolism, provenance, influences, process, materials, or movement affiliation.",
+              "Keep description factual and visual; reserve interpretation and evaluation for the additional notes.",
+              "Classification labels are descriptive viewing aids, not declarations of official art-historical membership.",
+              "Choose a page background matching the artwork's perimeter so the image can visually dissolve into the page.",
+            ].join(" "),
+          },
+        ],
       },
-      max_output_tokens: 1400,
-    }),
-  });
+      {
+        role: "user",
+        content: [
+          { type: "input_image", image_url: dataUrl, detail: "high" },
+          {
+            type: "input_text",
+            text: [
+              `Artwork date: ${artworkDate}.`,
+              `Artist-provided medium: ${medium || "Not specified"}.`,
+              currentTitle
+                ? `Current portfolio title: ${currentTitle}. Retain it unless a materially stronger title is clearly justified by the image.`
+                : "Propose a portfolio title.",
+              "Return the complete editorial record.",
+            ].join(" "),
+          },
+        ],
+      },
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "artwork_editorial_record",
+        strict: true,
+        schema: analysisSchema,
+      },
+    },
+    max_output_tokens: MAX_ANALYSIS_OUTPUT_TOKENS,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("OpenAI artwork review failed", response.status, errorText);
-    throw new Error("The artwork review could not be completed. Please try again.");
+  for (let attempt = 1; attempt <= MAX_ANALYSIS_ATTEMPTS; attempt += 1) {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenAI artwork review failed", response.status, errorText);
+      throw new Error("The artwork review could not be completed. Please try again.");
+    }
+
+    const result = await response.json() as OpenAIResponse;
+    if (result.status === "incomplete") {
+      console.warn(
+        "OpenAI artwork review was incomplete",
+        result.incomplete_details?.reason || "unknown reason",
+      );
+      if (attempt < MAX_ANALYSIS_ATTEMPTS) continue;
+      break;
+    }
+
+    const outputText = extractOutputText(result);
+    try {
+      return JSON.parse(outputText) as ArtworkAnalysis;
+    } catch (error) {
+      console.warn("OpenAI artwork review returned invalid JSON", error);
+      if (attempt < MAX_ANALYSIS_ATTEMPTS) continue;
+      break;
+    }
   }
 
-  const result = await response.json();
-  return JSON.parse(extractOutputText(result)) as ArtworkAnalysis;
+  throw new Error("The artwork review was incomplete. Please try again.");
 }
