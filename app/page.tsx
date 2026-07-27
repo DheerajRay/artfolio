@@ -153,6 +153,7 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "magnify">("none");
   const [slideshowActive, setSlideshowActive] = useState(false);
+  const [slideshowIndex, setSlideshowIndex] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [adminAuthorized, setAdminAuthorized] = useState(false);
@@ -262,6 +263,7 @@ export default function Home() {
     const timer = window.setInterval(() => {
       const next = (slideshowIndexRef.current + 1) % artworks.length;
       slideshowIndexRef.current = next;
+      setSlideshowIndex(next);
       setCurrent(next);
     }, SLIDESHOW_DELAY_MS);
     return () => window.clearInterval(timer);
@@ -413,11 +415,13 @@ export default function Home() {
   };
 
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
+  const slideshowArtwork = artworks[Math.min(slideshowIndex, artworks.length - 1)];
 
   const startSlideshow = async (startIndex: number) => {
     if (!presentationRef.current || artworks.length === 0) return;
     setViewMode("none");
     slideshowIndexRef.current = startIndex;
+    setSlideshowIndex(startIndex);
     setCurrent(startIndex);
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -449,16 +453,16 @@ export default function Home() {
           <span className="magnifier-center" />
         </div>
       )}
-      {slideshowActive && currentArtwork && (
+      {slideshowActive && slideshowArtwork && (
         <div
-          key={currentArtwork.id}
+          key={slideshowArtwork.id}
           className="slideshow-stage"
           style={{
-            "--slide-bg": currentArtwork.background,
-            "--slide-fg": currentArtwork.foreground,
+            "--slide-bg": slideshowArtwork.background,
+            "--slide-fg": slideshowArtwork.foreground,
           } as React.CSSProperties}
         >
-          <ArtworkVisual artwork={currentArtwork} />
+          <ArtworkVisual artwork={slideshowArtwork} />
         </div>
       )}
 
