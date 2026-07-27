@@ -40,7 +40,19 @@ type DetailsSection = "description" | "notes" | "details";
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
-const SLIDESHOW_DELAY_MS = 7_000;
+const SLIDESHOW_DELAY_MS = 5_000;
+
+function createShuffledIndices(length: number, previousIndex?: number) {
+  const indices = Array.from({ length }, (_, index) => index);
+  for (let index = indices.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [indices[index], indices[swapIndex]] = [indices[swapIndex], indices[index]];
+  }
+  if (indices.length > 1 && indices[0] === previousIndex) {
+    [indices[0], indices[1]] = [indices[1], indices[0]];
+  }
+  return indices;
+}
 
 async function encodeCanvasImage(
   canvas: HTMLCanvasElement,
@@ -177,6 +189,8 @@ export default function Home() {
   const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const slideshowIndexRef = useRef(0);
+  const slideshowOrderRef = useRef<number[]>([]);
+  const slideshowPositionRef = useRef(0);
   const magnifierRef = useRef<HTMLDivElement>(null);
   const magnifierCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -276,7 +290,15 @@ export default function Home() {
   useEffect(() => {
     if (!slideshowActive || artworks.length < 2) return;
     const timer = window.setInterval(() => {
-      const next = (slideshowIndexRef.current + 1) % artworks.length;
+      let order = slideshowOrderRef.current;
+      let nextPosition = slideshowPositionRef.current + 1;
+      if (order.length !== artworks.length || nextPosition >= order.length) {
+        order = createShuffledIndices(artworks.length, slideshowIndexRef.current);
+        slideshowOrderRef.current = order;
+        nextPosition = 0;
+      }
+      const next = order[nextPosition];
+      slideshowPositionRef.current = nextPosition;
       slideshowIndexRef.current = next;
       setSlideshowIndex(next);
       setCurrent(next);
@@ -431,9 +453,13 @@ export default function Home() {
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
   const slideshowArtwork = artworks[Math.min(slideshowIndex, artworks.length - 1)];
 
-  const startSlideshow = async (startIndex: number) => {
+  const startSlideshow = async () => {
     if (!presentationRef.current || artworks.length === 0) return;
+    const order = createShuffledIndices(artworks.length);
+    const startIndex = order[0];
     setViewMode("none");
+    slideshowOrderRef.current = order;
+    slideshowPositionRef.current = 0;
     slideshowIndexRef.current = startIndex;
     setSlideshowIndex(startIndex);
     setCurrent(startIndex);
@@ -545,7 +571,7 @@ export default function Home() {
                 type="button"
                 aria-label="Start fullscreen slideshow"
                 title="Start fullscreen slideshow"
-                onClick={() => startSlideshow(index)}
+                onClick={startSlideshow}
               >
                 <span className="slideshow-icon" aria-hidden="true" />
               </button>

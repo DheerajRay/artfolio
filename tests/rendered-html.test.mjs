@@ -31,7 +31,10 @@ test("shows only uploaded artworks in date order", async () => {
   assert.doesNotMatch(page, /spotlight/i);
   assert.match(page, /Start fullscreen slideshow/);
   assert.match(page, /requestFullscreen/);
-  assert.match(page, /SLIDESHOW_DELAY_MS = 7_000/);
+  assert.match(page, /SLIDESHOW_DELAY_MS = 5_000/);
+  assert.match(page, /createShuffledIndices/);
+  assert.match(page, /Math\.random\(\)/);
+  assert.match(page, /slideshowOrderRef/);
   assert.match(page, /fullscreenchange/);
   assert.match(page, /slideshow-stage/);
   assert.match(page, /slideshow-title/);
