@@ -78,6 +78,13 @@ button { color: inherit; font: inherit; }
   padding-top: 10px;
   border-top: 1px solid currentColor;
 }
+.slideshow-meta {
+  display: block;
+  margin-bottom: 9px;
+  font: 400 8px/1.35 var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .slideshow-description p {
   margin: 0;
   font: 400 11px/1.5 var(--font-sans);

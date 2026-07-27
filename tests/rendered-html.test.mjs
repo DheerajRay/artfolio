@@ -39,6 +39,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /slideshow-stage/);
   assert.match(page, /slideshow-title/);
   assert.match(page, /slideshow-description/);
+  assert.match(page, /slideshow-meta/);
+  assert.match(page, /slideshowArtwork\.classification\?\.genre/);
   assert.match(page, /artwork\.id === pendingArtworkId/);
   assert.match(page, /slideRefs\.current\[targetIndex\]\?\.scrollIntoView/);
   assert.doesNotMatch(page, /slideRefs\.current\[0\]\?\.scrollIntoView/);

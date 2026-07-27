@@ -508,6 +508,12 @@ export default function Home() {
             <h2>{slideshowArtwork.title}</h2>
           </div>
           <div className="slideshow-description">
+            <span className="slideshow-meta">
+              {slideshowArtwork.medium}
+              {slideshowArtwork.classification?.genre
+                ? ` · ${slideshowArtwork.classification.genre}`
+                : ""}
+            </span>
             <p>{slideshowArtwork.description}</p>
           </div>
         </div>
