@@ -562,6 +562,150 @@ button { color: inherit; font: inherit; }
   color: var(--slide-bg);
 }
 
+.soundtrack-control {
+  position: fixed;
+  z-index: 12;
+  left: 22px;
+  bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  color: var(--soundtrack-fg);
+}
+.soundtrack-toggle {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--soundtrack-bg);
+  cursor: pointer;
+  transition: transform .28s ease, color .28s ease, background .28s ease;
+}
+.soundtrack-toggle span {
+  font: 400 17px/1 var(--font-display);
+  transform: translateY(-1px);
+}
+.soundtrack-control.is-open .soundtrack-toggle {
+  color: var(--soundtrack-bg);
+  background: var(--soundtrack-fg);
+  transform: rotate(-12deg);
+}
+.soundtrack-drawer {
+  width: 280px;
+  overflow: hidden;
+  border: 1px solid currentColor;
+  background: var(--soundtrack-bg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-18px) scaleX(.92);
+  transform-origin: left bottom;
+  transition: opacity .28s ease, transform .38s cubic-bezier(.2,.75,.2,1);
+}
+.soundtrack-control.is-open .soundtrack-drawer {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0) scaleX(1);
+}
+.soundtrack-video {
+  display: grid;
+  width: 100%;
+  height: 200px;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid currentColor;
+  background: #000;
+}
+.soundtrack-video iframe,
+.soundtrack-video > div {
+  display: block;
+  width: 100% !important;
+  height: 200px !important;
+  border: 0;
+}
+.soundtrack-video p {
+  margin: 0;
+  padding: 20px;
+  color: #f1eee6;
+  font: 400 9px/1.4 var(--font-mono);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.soundtrack-title-viewport {
+  width: 100%;
+  overflow: hidden;
+  padding: 9px 10px 7px;
+  border-bottom: 1px solid currentColor;
+  white-space: nowrap;
+}
+.soundtrack-title-track {
+  display: flex;
+  width: max-content;
+  gap: 30px;
+  font: 500 9px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.soundtrack-title-viewport.is-overflowing .soundtrack-title-track {
+  animation: soundtrack-marquee 11s linear infinite;
+}
+@keyframes soundtrack-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 15px)); }
+}
+.soundtrack-timeline {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 7px;
+  min-height: 35px;
+  padding: 0 10px;
+}
+.soundtrack-timeline > span {
+  font: 400 7px var(--font-mono);
+  letter-spacing: .04em;
+}
+.soundtrack-timeline > span:last-child { text-align: right; }
+.soundtrack-timeline input {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.soundtrack-timeline input::-webkit-slider-runnable-track {
+  height: 1px;
+  background: currentColor;
+}
+.soundtrack-timeline input::-webkit-slider-thumb {
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  appearance: none;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--soundtrack-bg);
+}
+.soundtrack-timeline input::-moz-range-track {
+  height: 1px;
+  background: currentColor;
+}
+.soundtrack-timeline input::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--soundtrack-bg);
+}
+.soundtrack-timeline input:disabled { cursor: wait; opacity: .45; }
+
 .artwork-description {
   position: absolute;
   z-index: 6;
@@ -1157,6 +1301,36 @@ button { color: inherit; font: inherit; }
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+.soundtrack-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid currentColor;
+}
+.soundtrack-url-field,
+.soundtrack-search-link,
+.soundtrack-edit-grid > p { grid-column: 1 / -1; }
+.soundtrack-search-link {
+  width: max-content;
+  color: inherit;
+  font: 500 9px var(--font-mono);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  border-bottom: 1px solid currentColor;
+}
+.soundtrack-search-link i {
+  display: inline-block;
+  margin-left: 4px;
+  font-style: normal;
+  transition: transform .2s ease;
+}
+.soundtrack-search-link:hover i { transform: translate(2px, -2px); }
+.soundtrack-edit-grid > p {
+  margin: 0;
+  font: 400 11px/1.5 var(--font-sans);
+}
 .color-fields input[type="color"] {
   height: 44px;
   padding: 4px 0;
@@ -1203,6 +1377,16 @@ button { color: inherit; font: inherit; }
     bottom: calc(14px + env(safe-area-inset-bottom));
   }
   .scroll-suggestion span { display: none; }
+  .soundtrack-control {
+    left: max(14px, env(safe-area-inset-left));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  .soundtrack-toggle { width: 34px; height: 34px; }
+  .soundtrack-drawer { width: min(240px, calc(100vw - 70px)); }
+  .soundtrack-video,
+  .soundtrack-video iframe,
+  .soundtrack-video > div { height: 200px !important; }
   .artwork-description {
     right: max(14px, env(safe-area-inset-right));
     bottom: calc(14px + env(safe-area-inset-bottom));
@@ -1287,7 +1471,11 @@ button { color: inherit; font: inherit; }
   }
   .classification-tags > div { grid-template-columns: 64px minmax(0, 1fr); }
   .classification-tags i { font-size: 9px; }
-  .classification-edit-grid { grid-template-columns: 1fr; }
+  .classification-edit-grid,
+  .soundtrack-edit-grid { grid-template-columns: 1fr; }
+  .soundtrack-url-field,
+  .soundtrack-search-link,
+  .soundtrack-edit-grid > p { grid-column: auto; }
   .artist-line { gap: 6px; }
   .slideshow-toggle,
   .magnifier-toggle,
@@ -1355,5 +1543,6 @@ button { color: inherit; font: inherit; }
   *, *::before, *::after { transition-duration: .01ms !important; }
   .ai-review-mark i,
   .ai-review-pulse i,
-  .slideshow-stage { animation: none; }
+  .slideshow-stage,
+  .soundtrack-title-track { animation: none !important; }
 }

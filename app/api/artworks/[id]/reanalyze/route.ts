@@ -7,6 +7,7 @@ import {
   readArtworkImage,
   saveArtworkRecord,
 } from "../../_shared";
+import { CURATED_SOUNDTRACKS } from "../../../../artwork-soundtracks";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,7 @@ export async function POST(
       medium: record.medium,
       currentTitle: record.title,
     });
+    const curatedSoundtrack = CURATED_SOUNDTRACKS[record.title];
     const updated = {
       ...record,
       title: analysis.title,
@@ -50,6 +52,10 @@ export async function POST(
       classificationJson: JSON.stringify(analysis.classification),
       background: analysis.background,
       foreground: analysis.foreground,
+      soundtrackTitle: record.soundtrackTitle || curatedSoundtrack?.title || analysis.soundtrack.title,
+      soundtrackArtist: record.soundtrackArtist || curatedSoundtrack?.artist || analysis.soundtrack.artist,
+      soundtrackYoutubeUrl: record.soundtrackYoutubeUrl || curatedSoundtrack?.youtubeUrl || analysis.soundtrack.youtubeUrl,
+      soundtrackRationale: record.soundtrackRationale || curatedSoundtrack?.rationale || analysis.soundtrack.rationale,
     };
     await saveArtworkRecord(updated);
 

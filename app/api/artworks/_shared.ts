@@ -1,6 +1,7 @@
 import { del, list, put } from "@vercel/blob";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { CURATED_SOUNDTRACKS } from "../../artwork-soundtracks";
 
 export type ArtworkRecord = {
   id: string;
@@ -17,6 +18,10 @@ export type ArtworkRecord = {
   mimeType: string;
   originalName: string;
   createdAt: string;
+  soundtrackTitle?: string;
+  soundtrackArtist?: string;
+  soundtrackYoutubeUrl?: string;
+  soundtrackRationale?: string;
 };
 
 const RECORD_PREFIX = "artworks/records/";
@@ -165,6 +170,14 @@ export function publicArtwork(record: ArtworkRecord) {
   } catch {
     classification = {};
   }
+  const storedSoundtrack = record.soundtrackTitle && record.soundtrackArtist
+    ? {
+        title: record.soundtrackTitle,
+        artist: record.soundtrackArtist,
+        youtubeUrl: record.soundtrackYoutubeUrl || "",
+        rationale: record.soundtrackRationale || "",
+      }
+    : null;
   return {
     id: record.id,
     title: record.title,
@@ -177,6 +190,7 @@ export function publicArtwork(record: ArtworkRecord) {
     background: record.background,
     foreground: record.foreground,
     createdAt: record.createdAt,
+    soundtrack: storedSoundtrack || CURATED_SOUNDTRACKS[record.title] || null,
     imageUrl: /^https:\/\//.test(record.objectKey)
       ? record.objectKey
       : `/api/artworks/${record.id}/image`,

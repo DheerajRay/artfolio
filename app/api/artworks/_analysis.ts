@@ -15,12 +15,18 @@ export type ArtworkAnalysis = {
   classification: ArtworkClassification;
   background: string;
   foreground: "#171612" | "#F1EEE6";
+  soundtrack: {
+    title: string;
+    artist: string;
+    rationale: string;
+    youtubeUrl: string;
+  };
 };
 
 const analysisSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "description", "additionalNotes", "classification", "background", "foreground"],
+  required: ["title", "description", "additionalNotes", "classification", "background", "foreground", "soundtrack"],
   properties: {
     title: {
       type: "string",
@@ -87,6 +93,30 @@ const analysisSchema = {
       type: "string",
       enum: ["#171612", "#F1EEE6"],
       description: "The more legible text color against background.",
+    },
+    soundtrack: {
+      type: "object",
+      additionalProperties: false,
+      required: ["title", "artist", "rationale", "youtubeUrl"],
+      properties: {
+        title: {
+          type: "string",
+          description: "One existing, released song whose tone, rhythm, or atmosphere complements the visible artwork.",
+        },
+        artist: {
+          type: "string",
+          description: "The performing artist for the suggested song.",
+        },
+        rationale: {
+          type: "string",
+          description: "A concise one-sentence explanation grounded in the artwork's visible mood, rhythm, palette, or subject.",
+        },
+        youtubeUrl: {
+          type: "string",
+          description: "Always return an empty string. The owner supplies and verifies the playable YouTube URL.",
+          maxLength: 0,
+        },
+      },
     },
   },
 };
@@ -161,6 +191,7 @@ export async function analyzeArtworkImage({
               "Keep description factual and visual; reserve interpretation and evaluation for the additional notes.",
               "Classification labels are descriptive viewing aids, not declarations of official art-historical membership.",
               "Choose a page background matching the artwork's perimeter so the image can visually dissolve into the page.",
+              "Suggest one real, released song that complements the work. Do not invent or guess a YouTube URL; return an empty youtubeUrl.",
             ].join(" "),
           },
         ],

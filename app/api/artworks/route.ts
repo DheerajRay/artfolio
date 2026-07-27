@@ -10,6 +10,7 @@ import {
   saveArtworkRecord,
   storeArtworkImage,
 } from "./_shared";
+import { youtubeVideoId } from "../../artwork-soundtracks";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,10 @@ export async function POST(request: Request) {
     const medium = String(formData.get("medium") || "Mixed media").trim();
     const background = String(formData.get("background") || "").trim();
     const foreground = String(formData.get("foreground") || "").trim();
+    const soundtrackTitle = String(formData.get("soundtrackTitle") || "").trim();
+    const soundtrackArtist = String(formData.get("soundtrackArtist") || "").trim();
+    const soundtrackYoutubeUrl = String(formData.get("soundtrackYoutubeUrl") || "").trim();
+    const soundtrackRationale = String(formData.get("soundtrackRationale") || "").trim();
 
     if (!(image instanceof File) || !isSupportedImage(image)) {
       return NextResponse.json({ error: "Choose a JPEG, PNG, or WebP image." }, { status: 400 });
@@ -68,6 +73,12 @@ export async function POST(request: Request) {
     if (!isHexColor(background) || !["#171612", "#F1EEE6"].includes(foreground)) {
       return NextResponse.json({ error: "The artwork color settings are invalid." }, { status: 400 });
     }
+    if (!soundtrackTitle || soundtrackTitle.length > 160 || !soundtrackArtist || soundtrackArtist.length > 160) {
+      return NextResponse.json({ error: "Add a soundtrack title and artist." }, { status: 400 });
+    }
+    if (!soundtrackYoutubeUrl || !youtubeVideoId(soundtrackYoutubeUrl)) {
+      return NextResponse.json({ error: "Add a valid YouTube video link for the suggested soundtrack." }, { status: 400 });
+    }
 
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -86,6 +97,10 @@ export async function POST(request: Request) {
       mimeType: image.type,
       originalName: image.name,
       createdAt,
+      soundtrackTitle,
+      soundtrackArtist,
+      soundtrackYoutubeUrl,
+      soundtrackRationale,
     };
     await saveArtworkRecord(uploadedRecord);
 

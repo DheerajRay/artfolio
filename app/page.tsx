@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import ArtworkSoundtrackPlayer from "./artwork-soundtrack-player";
+import { ArtworkSoundtrack } from "./artwork-soundtracks";
 
 type Artwork = {
   id: string;
@@ -15,6 +17,7 @@ type Artwork = {
   imageUrl?: string;
   artworkDate?: string;
   createdAt?: string;
+  soundtrack?: ArtworkSoundtrack | null;
 };
 
 type ArtworkClassification = {
@@ -34,6 +37,7 @@ type ArtworkAnalysis = {
   classification: ArtworkClassification;
   background: string;
   foreground: "#171612" | "#F1EEE6";
+  soundtrack: ArtworkSoundtrack;
 };
 
 type DetailsSection = "description" | "notes" | "details";
@@ -379,6 +383,10 @@ export default function Home() {
 
   const publishArtwork = async () => {
     if (!selectedFile || !analysis) return;
+    if (!analysis.soundtrack.youtubeUrl.trim()) {
+      setDialogError("Find the suggested song on YouTube and paste its exact video link before publishing.");
+      return;
+    }
     setDialogError("");
     setWorkflowState("saving");
     try {
@@ -392,6 +400,10 @@ export default function Home() {
       formData.append("classification", JSON.stringify(analysis.classification));
       formData.append("background", analysis.background);
       formData.append("foreground", analysis.foreground);
+      formData.append("soundtrackTitle", analysis.soundtrack.title);
+      formData.append("soundtrackArtist", analysis.soundtrack.artist);
+      formData.append("soundtrackYoutubeUrl", analysis.soundtrack.youtubeUrl);
+      formData.append("soundtrackRationale", analysis.soundtrack.rationale || "");
       const response = await fetch("/api/artworks", { method: "POST", body: formData });
       const payload = await readApiPayload(response);
       if (!payload.artwork) throw new Error("The published artwork was not returned.");
@@ -641,16 +653,6 @@ export default function Home() {
 
           <ArtworkVisual artwork={artwork} />
 
-          <button
-            className="scroll-suggestion"
-            onClick={() => slideRefs.current[Math.min(index + 1, artworks.length - 1)]?.scrollIntoView({ behavior: "smooth" })}
-            disabled={index === artworks.length - 1}
-            aria-label={index === artworks.length - 1 ? "Final artwork" : "Scroll to next artwork"}
-          >
-            <span>{index === artworks.length - 1 ? "End of selection" : "Scroll to next work"}</span>
-            <i aria-hidden="true">{index === artworks.length - 1 ? "—" : "↓"}</i>
-          </button>
-
           <div className="artwork-description">
             <span>
               {artwork.medium}
@@ -677,6 +679,20 @@ export default function Home() {
           </div>
         </section>
       ))}
+
+      {currentArtwork
+        && !slideshowActive
+        && !dialogOpen
+        && !detailsArtwork
+        && !deletingArtwork
+        && (
+        <ArtworkSoundtrackPlayer
+          soundtrack={currentArtwork.soundtrack}
+          artworkTitle={currentArtwork.title}
+          background={currentArtwork.background}
+          foreground={currentArtwork.foreground}
+        />
+      )}
 
       {adminDialogOpen && (
         <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title">
@@ -972,6 +988,52 @@ export default function Home() {
                         />
                       </label>
                     ))}
+                  </div>
+                  <div className="soundtrack-edit-grid">
+                    <label className="field">
+                      <span>Suggested song</span>
+                      <input
+                        value={analysis.soundtrack.title}
+                        onChange={(event) => setAnalysis({
+                          ...analysis,
+                          soundtrack: { ...analysis.soundtrack, title: event.target.value },
+                        })}
+                        maxLength={160}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Artist</span>
+                      <input
+                        value={analysis.soundtrack.artist}
+                        onChange={(event) => setAnalysis({
+                          ...analysis,
+                          soundtrack: { ...analysis.soundtrack, artist: event.target.value },
+                        })}
+                        maxLength={160}
+                      />
+                    </label>
+                    <label className="field soundtrack-url-field">
+                      <span>YouTube video link <small>paste the exact playable video</small></span>
+                      <input
+                        type="url"
+                        value={analysis.soundtrack.youtubeUrl}
+                        onChange={(event) => setAnalysis({
+                          ...analysis,
+                          soundtrack: { ...analysis.soundtrack, youtubeUrl: event.target.value },
+                        })}
+                        placeholder="https://www.youtube.com/watch?v=…"
+                        required
+                      />
+                    </label>
+                    <a
+                      className="soundtrack-search-link"
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${analysis.soundtrack.title} ${analysis.soundtrack.artist} official`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Find this song on YouTube <i aria-hidden="true">↗</i>
+                    </a>
+                    <p>{analysis.soundtrack.rationale}</p>
                   </div>
                   {([
                     ["palette", "Palette"],
