@@ -1013,7 +1013,7 @@ export default function Home() {
                       />
                     </label>
                     <label className="field soundtrack-url-field">
-                      <span>YouTube video link <small>paste the exact playable video</small></span>
+                      <span>YouTube video link <small>AI-selected and playback-checked</small></span>
                       <input
                         type="url"
                         value={analysis.soundtrack.youtubeUrl}
@@ -1025,13 +1025,23 @@ export default function Home() {
                         required
                       />
                     </label>
+                    {analysis.soundtrack.youtubeUrl && (
+                      <a
+                        className="soundtrack-search-link"
+                        href={analysis.soundtrack.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open selected video <i aria-hidden="true">↗</i>
+                      </a>
+                    )}
                     <a
                       className="soundtrack-search-link"
                       href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${analysis.soundtrack.title} ${analysis.soundtrack.artist} official`)}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Find this song on YouTube <i aria-hidden="true">↗</i>
+                      Choose another on YouTube <i aria-hidden="true">↗</i>
                     </a>
                     <p>{analysis.soundtrack.rationale}</p>
                   </div>

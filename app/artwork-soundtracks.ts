@@ -24,7 +24,7 @@ export const CURATED_SOUNDTRACKS: Record<string, ArtworkSoundtrack> = {
   "Appetite in Orbit": {
     title: "Zodiac Shit",
     artist: "Flying Lotus",
-    youtubeUrl: "https://www.youtube.com/watch?v=0ScYz9sNaQk",
+    youtubeUrl: "https://www.youtube.com/watch?v=bsATw1-FiwU",
   },
   "A Date in Green": {
     title: "Friday Morning",
@@ -89,7 +89,7 @@ export const CURATED_SOUNDTRACKS: Record<string, ArtworkSoundtrack> = {
   "The Fourth Specimen": {
     title: "Lullaby",
     artist: "The Cure",
-    youtubeUrl: "https://www.youtube.com/watch?v=ijxk-fgcg7c",
+    youtubeUrl: "https://www.youtube.com/watch?v=sS6t56U9tBg",
   },
   "The Suspended Sovereign": {
     title: "If I Had a Heart",
@@ -159,7 +159,7 @@ export const CURATED_SOUNDTRACKS: Record<string, ArtworkSoundtrack> = {
   "Tiger, Type, Signal": {
     title: "Paper Planes",
     artist: "M.I.A.",
-    youtubeUrl: "https://www.youtube.com/watch?v=ewRjZoRtu0Y",
+    youtubeUrl: "https://www.youtube.com/watch?v=qeSLRXm4TSc",
   },
   "Entangled in Triplicate": {
     title: "The Rip",

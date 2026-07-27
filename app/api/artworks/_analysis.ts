@@ -1,3 +1,5 @@
+import { youtubeVideoId } from "../../artwork-soundtracks";
+
 export type ArtworkClassification = {
   discipline: string;
   genre: string;
@@ -113,7 +115,7 @@ const analysisSchema = {
         },
         youtubeUrl: {
           type: "string",
-          description: "Always return an empty string. The owner supplies and verifies the playable YouTube URL.",
+          description: "Leave empty. A separate web-search step resolves and verifies the direct YouTube URL.",
           maxLength: 0,
         },
       },
@@ -138,6 +140,20 @@ type OpenAIResponse = {
 
 const MAX_ANALYSIS_ATTEMPTS = 2;
 const MAX_ANALYSIS_OUTPUT_TOKENS = 4_000;
+const MAX_SOUNDTRACK_LINK_ATTEMPTS = 2;
+
+const soundtrackLinkSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["youtubeUrl"],
+  properties: {
+    youtubeUrl: {
+      type: "string",
+      description: "The exact canonical https://www.youtube.com/watch?v= URL for the selected song.",
+      pattern: "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$",
+    },
+  },
+};
 
 function extractOutputText(response: OpenAIResponse): string {
   if (typeof response.output_text === "string" && response.output_text.trim()) {
@@ -154,6 +170,130 @@ function extractOutputText(response: OpenAIResponse): string {
     }
   }
   throw new Error("OpenAI returned no usable artwork review.");
+}
+
+function galleryOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  return vercelHost ? `https://${vercelHost}` : "http://localhost:3000";
+}
+
+async function verifyYouTubeUrl(candidate: string) {
+  const videoId = youtubeVideoId(candidate);
+  if (!videoId) return "";
+
+  const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  try {
+    const metadataResponse = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`,
+      { signal: AbortSignal.timeout(8_000) },
+    );
+    if (!metadataResponse.ok) return "";
+
+    const origin = galleryOrigin();
+    const embedResponse = await fetch(
+      `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(origin)}`,
+      {
+        headers: { Referer: `${origin}/` },
+        signal: AbortSignal.timeout(8_000),
+      },
+    );
+    if (!embedResponse.ok) return "";
+
+    const embedHtml = await embedResponse.text();
+    const statusBlockStart = embedHtml.indexOf("previewPlayabilityStatus");
+    if (statusBlockStart < 0) return "";
+    const statusBlock = embedHtml.slice(statusBlockStart, statusBlockStart + 1_200);
+    const status = statusBlock.match(/status\\":\\"([^\\"]+)/)?.[1];
+    const playableInEmbed = statusBlock.match(/playableInEmbed\\":(true|false)/)?.[1];
+    return status === "OK" && playableInEmbed === "true" ? canonicalUrl : "";
+  } catch (error) {
+    console.warn("YouTube soundtrack verification failed", error);
+    return "";
+  }
+}
+
+async function resolveSoundtrackYouTubeUrl({
+  title,
+  artist,
+}: {
+  title: string;
+  artist: string;
+}) {
+  const requestBody = {
+    model: process.env.OPENAI_MODEL_SEARCH || process.env.OPENAI_MODEL_VISION || "gpt-5.6-sol",
+    reasoning: { effort: "low" },
+    tools: [
+      {
+        type: "web_search",
+        search_context_size: "low",
+        filters: { allowed_domains: ["youtube.com"] },
+      },
+    ],
+    input: [
+      {
+        role: "system",
+        content: [
+          {
+            type: "input_text",
+            text: [
+              "Find the exact released song on YouTube and return one direct watch URL.",
+              "You must use web search; never construct or guess a video ID.",
+              "Prefer the performing artist's channel, official label, VEVO, or artist Topic channel.",
+              "The result must be the requested recording, publicly available, and a standard youtube.com/watch URL.",
+            ].join(" "),
+          },
+        ],
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: `Song: ${title}\nPerforming artist: ${artist}`,
+          },
+        ],
+      },
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "youtube_soundtrack_link",
+        strict: true,
+        schema: soundtrackLinkSchema,
+      },
+    },
+    max_output_tokens: 800,
+  };
+
+  for (let attempt = 1; attempt <= MAX_SOUNDTRACK_LINK_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      if (!response.ok) {
+        console.warn("OpenAI soundtrack search failed", response.status, await response.text());
+        continue;
+      }
+
+      const result = await response.json() as OpenAIResponse;
+      if (result.status === "incomplete") continue;
+      const parsed = JSON.parse(extractOutputText(result)) as { youtubeUrl?: unknown };
+      if (typeof parsed.youtubeUrl !== "string") continue;
+      const verifiedUrl = await verifyYouTubeUrl(parsed.youtubeUrl);
+      if (verifiedUrl) return verifiedUrl;
+    } catch (error) {
+      console.warn("OpenAI soundtrack link resolution failed", error);
+    }
+  }
+
+  return "";
 }
 
 export async function analyzeArtworkImage({
@@ -191,7 +331,7 @@ export async function analyzeArtworkImage({
               "Keep description factual and visual; reserve interpretation and evaluation for the additional notes.",
               "Classification labels are descriptive viewing aids, not declarations of official art-historical membership.",
               "Choose a page background matching the artwork's perimeter so the image can visually dissolve into the page.",
-              "Suggest one real, released song that complements the work. Do not invent or guess a YouTube URL; return an empty youtubeUrl.",
+              "Suggest one real, released song that complements the work. Leave youtubeUrl empty; the server resolves and verifies it separately.",
             ].join(" "),
           },
         ],
@@ -253,7 +393,9 @@ export async function analyzeArtworkImage({
 
     const outputText = extractOutputText(result);
     try {
-      return JSON.parse(outputText) as ArtworkAnalysis;
+      const analysis = JSON.parse(outputText) as ArtworkAnalysis;
+      analysis.soundtrack.youtubeUrl = await resolveSoundtrackYouTubeUrl(analysis.soundtrack);
+      return analysis;
     } catch (error) {
       console.warn("OpenAI artwork review returned invalid JSON", error);
       if (attempt < MAX_ANALYSIS_ATTEMPTS) continue;

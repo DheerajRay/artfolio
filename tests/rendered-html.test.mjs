@@ -52,8 +52,9 @@ test("shows only uploaded artworks in date order", async () => {
 });
 
 test("adds curated and AI-suggested artwork soundtracks", async () => {
-  const [page, player, catalog, analysisService, artworkRoute] = await Promise.all([
+  const [page, styles, player, catalog, analysisService, artworkRoute] = await Promise.all([
     source("app/page.tsx"),
+    source("app/globals.css"),
     source("app/artwork-soundtrack-player.tsx"),
     source("app/artwork-soundtracks.ts"),
     source("app/api/artworks/_analysis.ts"),
@@ -65,12 +66,16 @@ test("adds curated and AI-suggested artwork soundtracks", async () => {
   assert.match(player, /seekTo/);
   assert.match(player, /soundtrack-title-viewport/);
   assert.match(player, /soundtrack-video/);
+  assert.match(styles, /\.soundtrack-video iframe,[\s\S]*filter:\s*grayscale\(1\)/);
   assert.match(page, /Suggested song/);
   assert.match(page, /YouTube video link/);
-  assert.match(page, /Find this song on YouTube/);
-  assert.match(page, /paste its exact video link before publishing/);
+  assert.match(page, /Open selected video/);
+  assert.match(page, /Choose another on YouTube/);
   assert.match(analysisService, /Suggest one real, released song/);
-  assert.match(analysisService, /Do not invent or guess a YouTube URL/);
+  assert.match(analysisService, /type: "web_search"/);
+  assert.match(analysisService, /allowed_domains: \["youtube\.com"\]/);
+  assert.match(analysisService, /verifyYouTubeUrl/);
+  assert.match(analysisService, /playableInEmbed/);
   assert.match(artworkRoute, /soundtrackYoutubeUrl/);
   assert.match(artworkRoute, /Add a valid YouTube video link for the suggested soundtrack/);
 });

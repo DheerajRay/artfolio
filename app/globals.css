@@ -627,6 +627,7 @@ button { color: inherit; font: inherit; }
   width: 100% !important;
   height: 200px !important;
   border: 0;
+  filter: grayscale(1);
 }
 .soundtrack-video p {
   margin: 0;
