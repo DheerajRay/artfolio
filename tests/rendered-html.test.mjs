@@ -33,6 +33,7 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /requestFullscreen/);
   assert.match(page, /SLIDESHOW_DELAY_MS = 7_000/);
   assert.match(page, /fullscreenchange/);
+  assert.match(page, /slideshow-stage/);
 });
 
 test("keeps mobile PWA dialogs inside safe areas", async () => {

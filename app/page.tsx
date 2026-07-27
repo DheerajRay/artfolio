@@ -263,11 +263,6 @@ export default function Home() {
       const next = (slideshowIndexRef.current + 1) % artworks.length;
       slideshowIndexRef.current = next;
       setCurrent(next);
-      const slideHeight = slideRefs.current[next]?.offsetHeight || presentationRef.current?.clientHeight || 0;
-      presentationRef.current?.scrollTo({
-        top: next * slideHeight,
-        behavior: "smooth",
-      });
     }, SLIDESHOW_DELAY_MS);
     return () => window.clearInterval(timer);
   }, [artworks.length, slideshowActive]);
@@ -430,17 +425,6 @@ export default function Home() {
     try {
       await presentationRef.current.requestFullscreen();
       setSlideshowActive(true);
-      const alignToStartingArtwork = () => {
-        const slideHeight = slideRefs.current[startIndex]?.offsetHeight || presentationRef.current?.clientHeight || 0;
-        presentationRef.current?.scrollTo({
-          top: startIndex * slideHeight,
-          behavior: "auto",
-        });
-      };
-      alignToStartingArtwork();
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(alignToStartingArtwork);
-      });
     } catch (error) {
       console.warn("Fullscreen slideshow could not start", error);
       setSlideshowActive(false);
@@ -463,6 +447,18 @@ export default function Home() {
             <ArtworkVisual artwork={currentArtwork} />
           </div>
           <span className="magnifier-center" />
+        </div>
+      )}
+      {slideshowActive && currentArtwork && (
+        <div
+          key={currentArtwork.id}
+          className="slideshow-stage"
+          style={{
+            "--slide-bg": currentArtwork.background,
+            "--slide-fg": currentArtwork.foreground,
+          } as React.CSSProperties}
+        >
+          <ArtworkVisual artwork={currentArtwork} />
         </div>
       )}
 

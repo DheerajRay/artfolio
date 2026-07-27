@@ -25,22 +25,31 @@ button { color: inherit; font: inherit; }
 }
 .presentation:fullscreen {
   height: 100dvh;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
+  overflow: hidden;
 }
 .presentation.slideshow-active,
 .presentation.slideshow-active button {
   cursor: none;
 }
-.presentation.slideshow-active .slide-index,
-.presentation.slideshow-active .slide-top-right,
-.presentation.slideshow-active .scroll-suggestion,
-.presentation.slideshow-active .artwork-description,
-.presentation.slideshow-active .side-progress {
-  display: none;
+.presentation.slideshow-active > .art-slide {
+  visibility: hidden;
 }
-.presentation.slideshow-active .artwork-visual {
+.slideshow-stage {
+  position: fixed;
+  z-index: 50;
   inset: 0;
+  overflow: hidden;
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  cursor: none;
+  animation: slideshow-reveal .7s ease both;
+}
+.slideshow-stage .artwork-visual {
+  inset: 0;
+}
+@keyframes slideshow-reveal {
+  from { opacity: .15; transform: scale(.996); }
+  to { opacity: 1; transform: scale(1); }
 }
 .magnifier-lens {
   position: fixed;
@@ -1304,5 +1313,6 @@ button { color: inherit; font: inherit; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
   .ai-review-mark i,
-  .ai-review-pulse i { animation: none; }
+  .ai-review-pulse i,
+  .slideshow-stage { animation: none; }
 }
