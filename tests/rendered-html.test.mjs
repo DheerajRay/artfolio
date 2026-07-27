@@ -28,6 +28,11 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /\/api\/artworks\/analyze/);
   assert.match(page, /\/api\/artworks/);
   assert.match(page, /Delete artwork/);
+  assert.doesNotMatch(page, /spotlight/i);
+  assert.match(page, /Start fullscreen slideshow/);
+  assert.match(page, /requestFullscreen/);
+  assert.match(page, /SLIDESHOW_DELAY_MS = 7_000/);
+  assert.match(page, /fullscreenchange/);
 });
 
 test("keeps mobile PWA dialogs inside safe areas", async () => {

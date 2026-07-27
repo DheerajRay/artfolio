@@ -40,6 +40,7 @@ type DetailsSection = "description" | "notes" | "details";
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
+const SLIDESHOW_DELAY_MS = 7_000;
 
 async function encodeCanvasImage(
   canvas: HTMLCanvasElement,
@@ -150,7 +151,8 @@ export default function Home() {
   const artworks = useMemo(() => sortArtworksByDate(uploadedArtworks), [uploadedArtworks]);
   const [loadingArtworks, setLoadingArtworks] = useState(true);
   const [current, setCurrent] = useState(0);
-  const [viewMode, setViewMode] = useState<"none" | "spotlight" | "magnify">("none");
+  const [viewMode, setViewMode] = useState<"none" | "magnify">("none");
+  const [slideshowActive, setSlideshowActive] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [adminAuthorized, setAdminAuthorized] = useState(false);
@@ -170,8 +172,8 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<ArtworkAnalysis | null>(null);
   const [workflowState, setWorkflowState] = useState<"idle" | "preparing" | "analyzing" | "saving">("idle");
   const [dialogError, setDialogError] = useState("");
+  const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
-  const spotlightRef = useRef<HTMLDivElement>(null);
   const magnifierRef = useRef<HTMLDivElement>(null);
   const magnifierCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -229,15 +231,10 @@ export default function Home() {
   }, [current, dialogOpen, deletingArtwork, detailsArtwork, artworks.length]);
 
   useEffect(() => {
-    if (spotlightRef.current) spotlightRef.current.style.opacity = "0";
     if (magnifierRef.current) magnifierRef.current.style.opacity = "0";
     if (viewMode === "none") return;
 
     const moveViewingTool = (event: PointerEvent) => {
-      if (viewMode === "spotlight" && spotlightRef.current) {
-        spotlightRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
-        spotlightRef.current.style.opacity = "1";
-      }
       if (viewMode === "magnify" && magnifierRef.current && magnifierCanvasRef.current) {
         const zoom = 1.8;
         const radius = 150;
@@ -250,6 +247,26 @@ export default function Home() {
     window.addEventListener("pointermove", moveViewingTool, { passive: true });
     return () => window.removeEventListener("pointermove", moveViewingTool);
   }, [viewMode, current]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setSlideshowActive(document.fullscreenElement === presentationRef.current);
+    };
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
+  }, []);
+
+  useEffect(() => {
+    if (!slideshowActive || artworks.length < 2) return;
+    const timer = window.setInterval(() => {
+      setCurrent((active) => {
+        const next = (active + 1) % artworks.length;
+        slideRefs.current[next]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return next;
+      });
+    }, SLIDESHOW_DELAY_MS);
+    return () => window.clearInterval(timer);
+  }, [artworks.length, slideshowActive]);
 
   useEffect(() => {
     document.body.style.overflow = dialogOpen || adminDialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
@@ -398,15 +415,24 @@ export default function Home() {
 
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
 
+  const startSlideshow = async () => {
+    if (!presentationRef.current || artworks.length === 0) return;
+    setViewMode("none");
+    try {
+      await presentationRef.current.requestFullscreen();
+      setSlideshowActive(true);
+      slideRefs.current[current]?.scrollIntoView({ block: "start" });
+    } catch (error) {
+      console.warn("Fullscreen slideshow could not start", error);
+      setSlideshowActive(false);
+    }
+  };
+
   return (
-    <main className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""}`}>
-      <div
-        ref={spotlightRef}
-        className={`color-spotlight ${viewMode === "spotlight" ? "active" : ""}`}
-        aria-hidden="true"
-      >
-        <span />
-      </div>
+    <main
+      ref={presentationRef}
+      className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""} ${slideshowActive ? "slideshow-active" : ""}`}
+    >
       {currentArtwork && (
         <div
           ref={magnifierRef}
@@ -475,14 +501,13 @@ export default function Home() {
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
               <button
-                className="spotlight-toggle"
+                className="slideshow-toggle"
                 type="button"
-                aria-label={viewMode === "spotlight" ? "Turn off color spotlight" : "Turn on color spotlight"}
-                aria-pressed={viewMode === "spotlight"}
-                title={viewMode === "spotlight" ? "Turn off color spotlight" : "Turn on color spotlight"}
-                onClick={() => setViewMode((mode) => mode === "spotlight" ? "none" : "spotlight")}
+                aria-label="Start fullscreen slideshow"
+                title="Start fullscreen slideshow"
+                onClick={startSlideshow}
               >
-                <span className="spotlight-icon" aria-hidden="true" />
+                <span className="slideshow-icon" aria-hidden="true" />
               </button>
               <button
                 className="magnifier-toggle"
