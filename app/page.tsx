@@ -149,6 +149,7 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
 export default function Home() {
   const [uploadedArtworks, setUploadedArtworks] = useState<Artwork[]>([]);
   const artworks = useMemo(() => sortArtworksByDate(uploadedArtworks), [uploadedArtworks]);
+  const [pendingArtworkId, setPendingArtworkId] = useState<string | null>(null);
   const [loadingArtworks, setLoadingArtworks] = useState(true);
   const [current, setCurrent] = useState(0);
   const [viewMode, setViewMode] = useState<"none" | "magnify">("none");
@@ -219,6 +220,20 @@ export default function Home() {
     slideRefs.current.slice(0, artworks.length).forEach((slide) => slide && observer.observe(slide));
     return () => observer.disconnect();
   }, [artworks]);
+
+  useEffect(() => {
+    if (!pendingArtworkId) return;
+    const targetIndex = artworks.findIndex((artwork) => artwork.id === pendingArtworkId);
+    if (targetIndex < 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setCurrent(targetIndex);
+      slideRefs.current[targetIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setPendingArtworkId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [artworks, pendingArtworkId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -359,10 +374,9 @@ export default function Home() {
       const payload = await readApiPayload(response);
       if (!payload.artwork) throw new Error("The published artwork was not returned.");
       setUploadedArtworks((existing) => sortArtworksByDate([...existing, payload.artwork!]));
-      setCurrent(0);
+      setPendingArtworkId(payload.artwork.id);
       setDialogOpen(false);
       resetDialog();
-      window.setTimeout(() => slideRefs.current[0]?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (error) {
       setDialogError(error instanceof Error ? error.message : "Artwork could not be published.");
       setWorkflowState("idle");
