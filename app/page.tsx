@@ -463,6 +463,13 @@ export default function Home() {
           } as React.CSSProperties}
         >
           <ArtworkVisual artwork={slideshowArtwork} />
+          <div className="slideshow-title">
+            <span>{slideshowArtwork.year}</span>
+            <h2>{slideshowArtwork.title}</h2>
+          </div>
+          <div className="slideshow-description">
+            <p>{slideshowArtwork.description}</p>
+          </div>
         </div>
       )}
 

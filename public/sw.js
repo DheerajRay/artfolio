@@ -1,4 +1,4 @@
-const CACHE = "artfolio-presentation-v8";
+const CACHE = "artfolio-presentation-v9";
 const SHELL = [
   "/",
   "/manifest.webmanifest",

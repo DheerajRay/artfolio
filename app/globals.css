@@ -47,6 +47,41 @@ button { color: inherit; font: inherit; }
 .slideshow-stage .artwork-visual {
   inset: 0;
 }
+.slideshow-title {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  top: 22px;
+  width: min(430px, 36vw);
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  text-align: right;
+}
+.slideshow-title span {
+  padding-top: 6px;
+  font: 400 8px var(--font-mono);
+  letter-spacing: .06em;
+}
+.slideshow-title h2 {
+  margin: 0;
+  font: 400 clamp(32px, 3.8vw, 60px)/.88 var(--font-display);
+  letter-spacing: -.055em;
+}
+.slideshow-description {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  bottom: 22px;
+  width: min(390px, 31vw);
+  padding-top: 10px;
+  border-top: 1px solid currentColor;
+}
+.slideshow-description p {
+  margin: 0;
+  font: 400 11px/1.5 var(--font-sans);
+}
 @keyframes slideshow-reveal {
   from { opacity: .15; transform: scale(.996); }
   to { opacity: 1; transform: scale(1); }
