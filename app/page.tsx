@@ -424,6 +424,9 @@ export default function Home() {
     setViewMode("none");
     slideshowIndexRef.current = startIndex;
     setCurrent(startIndex);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     try {
       await presentationRef.current.requestFullscreen();
       setSlideshowActive(true);
