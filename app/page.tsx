@@ -475,6 +475,19 @@ export default function Home() {
     }
   };
 
+  const stopSlideshow = async () => {
+    if (!document.fullscreenElement) {
+      setSlideshowActive(false);
+      return;
+    }
+    try {
+      await document.exitFullscreen();
+    } catch (error) {
+      console.warn("Fullscreen slideshow could not close", error);
+      setSlideshowActive(false);
+    }
+  };
+
   return (
     <main
       ref={presentationRef}
@@ -503,6 +516,17 @@ export default function Home() {
           } as React.CSSProperties}
         >
           <ArtworkVisual artwork={slideshowArtwork} />
+          <div className="slideshow-artist">
+            <span>Dheeraj Ray</span>
+            <button
+              type="button"
+              aria-label="Stop slideshow and exit fullscreen"
+              title="Stop slideshow"
+              onClick={stopSlideshow}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
           <div className="slideshow-title">
             <span>{slideshowArtwork.year}</span>
             <h2>{slideshowArtwork.title}</h2>

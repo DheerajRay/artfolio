@@ -47,6 +47,41 @@ button { color: inherit; font: inherit; }
 .slideshow-stage .artwork-visual {
   inset: 0;
 }
+.slideshow-artist {
+  position: absolute;
+  z-index: 3;
+  left: 24px;
+  top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.slideshow-artist > span {
+  font: 500 14px/1 var(--font-sans);
+  letter-spacing: -.025em;
+}
+.slideshow-artist button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--slide-bg) 74%, transparent);
+  color: inherit;
+  font: 400 17px/1 var(--font-sans);
+  transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+.presentation.slideshow-active .slideshow-artist button {
+  cursor: pointer;
+}
+.slideshow-artist button:hover,
+.slideshow-artist button:focus-visible {
+  color: var(--slide-bg);
+  background: var(--slide-fg);
+  transform: rotate(90deg);
+}
 .slideshow-title {
   position: absolute;
   z-index: 2;
