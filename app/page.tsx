@@ -263,8 +263,9 @@ export default function Home() {
       const next = (slideshowIndexRef.current + 1) % artworks.length;
       slideshowIndexRef.current = next;
       setCurrent(next);
+      const slideHeight = slideRefs.current[next]?.offsetHeight || presentationRef.current?.clientHeight || 0;
       presentationRef.current?.scrollTo({
-        top: slideRefs.current[next]?.offsetTop || 0,
+        top: next * slideHeight,
         behavior: "smooth",
       });
     }, SLIDESHOW_DELAY_MS);
@@ -427,8 +428,9 @@ export default function Home() {
       await presentationRef.current.requestFullscreen();
       setSlideshowActive(true);
       const alignToStartingArtwork = () => {
+        const slideHeight = slideRefs.current[startIndex]?.offsetHeight || presentationRef.current?.clientHeight || 0;
         presentationRef.current?.scrollTo({
-          top: slideRefs.current[startIndex]?.offsetTop || 0,
+          top: startIndex * slideHeight,
           behavior: "auto",
         });
       };
