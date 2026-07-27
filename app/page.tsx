@@ -426,9 +426,15 @@ export default function Home() {
     try {
       await presentationRef.current.requestFullscreen();
       setSlideshowActive(true);
-      presentationRef.current.scrollTo({
-        top: slideRefs.current[startIndex]?.offsetTop || 0,
-        behavior: "auto",
+      const alignToStartingArtwork = () => {
+        presentationRef.current?.scrollTo({
+          top: slideRefs.current[startIndex]?.offsetTop || 0,
+          behavior: "auto",
+        });
+      };
+      alignToStartingArtwork();
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(alignToStartingArtwork);
       });
     } catch (error) {
       console.warn("Fullscreen slideshow could not start", error);
