@@ -157,6 +157,38 @@ function sortArtworksByDate(items: Artwork[]) {
   });
 }
 
+function normalizedSearchText(value: string) {
+  return value
+    .normalize("NFKD")
+    .toLocaleLowerCase()
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function artworkMatchesSearch(artwork: Artwork, query: string) {
+  const tokens = normalizedSearchText(query).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const classification = artwork.classification;
+  const searchableText = normalizedSearchText([
+    artwork.title,
+    artwork.year,
+    artwork.medium,
+    artwork.description,
+    artwork.additionalNotes,
+    classification?.discipline,
+    classification?.genre,
+    classification?.visualLanguage,
+    classification?.composition,
+    ...(classification?.palette || []),
+    ...(classification?.mood || []),
+    ...(classification?.subjects || []),
+  ].filter(Boolean).join(" "));
+
+  return tokens.every((token) => searchableText.includes(token));
+}
+
 function ArtworkVisual({ artwork }: { artwork: Artwork }) {
   return (
     <div className="artwork-visual artwork-image" aria-label={artwork.title} role="img">
@@ -175,6 +207,8 @@ export default function Home() {
   const [slideshowActive, setSlideshowActive] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [adminAuthorized, setAdminAuthorized] = useState(false);
@@ -197,6 +231,7 @@ export default function Home() {
   const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const galleryCardRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const presentationSearchInputRef = useRef<HTMLInputElement>(null);
   const slideshowIndexRef = useRef(0);
   const slideshowOrderRef = useRef<number[]>([]);
   const slideshowPositionRef = useRef(0);
@@ -288,6 +323,21 @@ export default function Home() {
       window.removeEventListener("keydown", closeGallery);
     };
   }, [current, galleryOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      presentationSearchInputRef.current?.focus();
+    });
+    const closeSearch = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", closeSearch);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", closeSearch);
+    };
+  }, [searchOpen]);
 
   useEffect(() => {
     if (magnifierRef.current) magnifierRef.current.style.opacity = "0";
@@ -489,18 +539,35 @@ export default function Home() {
 
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
   const slideshowArtwork = artworks[Math.min(slideshowIndex, artworks.length - 1)];
+  const searchMatches = useMemo(
+    () => artworks
+      .map((artwork, index) => ({ artwork, index }))
+      .filter(({ artwork }) => artworkMatchesSearch(artwork, searchQuery)),
+    [artworks, searchQuery],
+  );
 
   const openGallery = () => {
     setViewMode("none");
+    setSearchOpen(false);
     setGalleryOpen(true);
   };
 
-  const selectGalleryArtwork = (index: number) => {
+  const selectArtworkFromSearch = (index: number) => {
     setGalleryOpen(false);
+    setSearchOpen(false);
     setCurrent(index);
     window.requestAnimationFrame(() => {
       slideRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const selectGalleryArtwork = (index: number) => {
+    selectArtworkFromSearch(index);
+  };
+
+  const openPresentationSearch = () => {
+    setViewMode("none");
+    setSearchOpen(true);
   };
 
   const startSlideshow = async () => {
@@ -574,6 +641,59 @@ export default function Home() {
         </div>
       )}
 
+      {searchOpen && !galleryOpen && currentArtwork && (
+        <aside
+          className="presentation-search"
+          role="search"
+          aria-label="Search artworks"
+          style={{
+            "--search-bg": currentArtwork.background,
+            "--search-fg": currentArtwork.foreground,
+          } as React.CSSProperties}
+        >
+          <div className="artwork-search-field">
+            <span className="artwork-search-icon" aria-hidden="true" />
+            <input
+              ref={presentationSearchInputRef}
+              type="search"
+              value={searchQuery}
+              aria-label="Search by title, character, color, or art style"
+              placeholder="Search title, character, color, style…"
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="Close artwork search"
+              onClick={() => setSearchOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="presentation-search-results" aria-live="polite">
+            {searchQuery.trim() ? (
+              searchMatches.length > 0 ? (
+                searchMatches.slice(0, 10).map(({ artwork, index }) => (
+                  <button
+                    type="button"
+                    key={artwork.id}
+                    onClick={() => selectArtworkFromSearch(index)}
+                  >
+                    <span>{artwork.title}</span>
+                    <small>
+                      {artwork.year} · {artwork.classification?.genre || artwork.medium}
+                    </small>
+                  </button>
+                ))
+              ) : (
+                <p>No works match “{searchQuery.trim()}”.</p>
+              )
+            ) : (
+              <p>Search across titles, characters, colors, moods, and visual styles.</p>
+            )}
+          </div>
+        </aside>
+      )}
+
       {galleryOpen && (
         <section
           className="gallery-index"
@@ -587,6 +707,30 @@ export default function Home() {
             <div>
               <span>Collection index / {String(artworks.length).padStart(2, "0")} works</span>
               <h1>Artfolio</h1>
+            </div>
+            <div className="gallery-index-search" role="search">
+              <div className="artwork-search-field">
+                <span className="artwork-search-icon" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  aria-label="Search gallery by title, character, color, or art style"
+                  placeholder="Search title, character, color, style…"
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    aria-label="Clear gallery search"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <span aria-live="polite">
+                {String(searchMatches.length).padStart(2, "0")} of {String(artworks.length).padStart(2, "0")} shown
+              </span>
             </div>
             <div className="gallery-index-owner">
               <p>Dheeraj Ray</p>
@@ -602,7 +746,7 @@ export default function Home() {
             </div>
           </header>
           <div className="gallery-index-grid">
-            {artworks.map((artwork, index) => (
+            {searchMatches.map(({ artwork, index }, visibleIndex) => (
               <button
                 className="gallery-card"
                 key={artwork.id}
@@ -614,9 +758,9 @@ export default function Home() {
                 style={{
                   "--tile-bg": artwork.background,
                   "--tile-fg": artwork.foreground,
-                  "--gallery-span": GALLERY_DESKTOP_SPANS[index % GALLERY_DESKTOP_SPANS.length],
-                  "--gallery-mobile-span": GALLERY_MOBILE_SPANS[index % GALLERY_MOBILE_SPANS.length],
-                  "--gallery-hover-tilt": GALLERY_HOVER_TILTS[index % GALLERY_HOVER_TILTS.length],
+                  "--gallery-span": GALLERY_DESKTOP_SPANS[visibleIndex % GALLERY_DESKTOP_SPANS.length],
+                  "--gallery-mobile-span": GALLERY_MOBILE_SPANS[visibleIndex % GALLERY_MOBILE_SPANS.length],
+                  "--gallery-hover-tilt": GALLERY_HOVER_TILTS[visibleIndex % GALLERY_HOVER_TILTS.length],
                 } as React.CSSProperties}
               >
                 <span className="gallery-card-image">
@@ -624,7 +768,7 @@ export default function Home() {
                     <img
                       src={artwork.imageUrl}
                       alt=""
-                      loading={index < 6 ? "eager" : "lazy"}
+                      loading={visibleIndex < 6 ? "eager" : "lazy"}
                     />
                   )}
                 </span>
@@ -635,6 +779,11 @@ export default function Home() {
                 </span>
               </button>
             ))}
+            {searchMatches.length === 0 && (
+              <p className="gallery-empty-results">
+                No works match “{searchQuery.trim()}”.
+              </p>
+            )}
           </div>
         </section>
       )}
@@ -703,6 +852,16 @@ export default function Home() {
           <div className="slide-top-right">
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
+              <button
+                className="search-toggle"
+                type="button"
+                aria-label="Search artworks"
+                title="Search artworks"
+                aria-pressed={searchOpen}
+                onClick={openPresentationSearch}
+              >
+                <span aria-hidden="true" />
+              </button>
               <button
                 className="gallery-toggle"
                 type="button"
@@ -806,6 +965,7 @@ export default function Home() {
       {currentArtwork
         && !slideshowActive
         && !galleryOpen
+        && !searchOpen
         && !dialogOpen
         && !detailsArtwork
         && !deletingArtwork

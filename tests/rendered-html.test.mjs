@@ -98,7 +98,7 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(page, /block: "center"/);
   assert.match(page, /aria-current=\{index === current/);
   assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
-  assert.match(page, /loading=\{index < 6 \? "eager" : "lazy"\}/);
+  assert.match(page, /loading=\{visibleIndex < 6 \? "eager" : "lazy"\}/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,/);
   assert.match(styles, /grid-auto-flow:\s*dense/);
   assert.match(styles, /grid-column:\s*span var\(--gallery-span\)/);
@@ -109,6 +109,28 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(styles, /\.gallery-card-image::after/);
   assert.match(databasePlan, /Status: parked/);
   assert.match(databasePlan, /cursor-based pages/);
+});
+
+test("searches artwork metadata in both portfolio views", async () => {
+  const [page, styles] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/globals.css"),
+  ]);
+
+  assert.match(page, /artworkMatchesSearch/);
+  assert.match(page, /classification\?\.subjects/);
+  assert.match(page, /classification\?\.palette/);
+  assert.match(page, /classification\?\.visualLanguage/);
+  assert.match(page, /tokens\.every/);
+  assert.match(page, /className="presentation-search"/);
+  assert.match(page, /className="gallery-index-search"/);
+  assert.match(page, /Search title, character, color, style/);
+  assert.match(page, /searchMatches\.map/);
+  assert.match(page, /selectArtworkFromSearch/);
+  assert.match(styles, /\.presentation-search/);
+  assert.match(styles, /\.gallery-index-search/);
+  assert.match(styles, /\.gallery-empty-results/);
+  assert.match(styles, /\.artwork-search-field input[\s\S]*font-size:\s*16px/);
 });
 
 test("keeps mobile PWA dialogs inside safe areas", async () => {
