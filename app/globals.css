@@ -194,6 +194,7 @@ button { color: inherit; font: inherit; }
   letter-spacing: -.035em;
 }
 .slideshow-toggle,
+.gallery-toggle,
 .magnifier-toggle,
 .add-artwork-toggle,
 .delete-artwork-toggle,
@@ -209,6 +210,7 @@ button { color: inherit; font: inherit; }
   transition: background .25s, color .25s, transform .25s;
 }
 .slideshow-toggle:hover,
+.gallery-toggle:hover,
 .magnifier-toggle:hover,
 .add-artwork-toggle:hover,
 .delete-artwork-toggle:hover,
@@ -228,6 +230,31 @@ button { color: inherit; font: inherit; }
   border-bottom: 5px solid transparent;
   border-left: 8px solid currentColor;
   transform: translate(-38%, -50%);
+}
+.gallery-toggle > span,
+.gallery-toggle > span::before,
+.gallery-toggle > span::after {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1px solid currentColor;
+  content: "";
+}
+.gallery-toggle > span {
+  left: 6px;
+  top: 6px;
+}
+.gallery-toggle > span::before {
+  left: 7px;
+  top: -1px;
+  width: 6px;
+  height: 7px;
+}
+.gallery-toggle > span::after {
+  left: -1px;
+  top: 7px;
+  width: 13px;
+  height: 5px;
 }
 .magnifier-icon {
   position: absolute;
@@ -329,6 +356,151 @@ button { color: inherit; font: inherit; }
   margin: 0;
   font: 400 clamp(28px, 3.5vw, 55px)/.88 var(--font-display);
   letter-spacing: -.055em;
+}
+
+.gallery-index {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--gallery-bg);
+  color: var(--gallery-fg);
+  animation: gallery-index-reveal .45s cubic-bezier(.2,.75,.2,1) both;
+}
+.gallery-index-header {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: 112px;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid currentColor;
+  background: color-mix(in srgb, var(--gallery-bg) 91%, transparent);
+  backdrop-filter: blur(16px);
+}
+.gallery-index-header > div:first-child > span {
+  display: block;
+  font: 400 8px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.gallery-index-header h1 {
+  margin: 13px 0 0;
+  font: 400 clamp(38px, 5vw, 76px)/.78 var(--font-display);
+  letter-spacing: -.06em;
+}
+.gallery-index-owner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gallery-index-owner p {
+  margin: 0;
+  font: 600 15px var(--font-sans);
+  letter-spacing: -.035em;
+}
+.gallery-close {
+  position: relative;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform .25s, background .25s, color .25s;
+}
+.gallery-close:hover {
+  color: var(--gallery-bg);
+  background: var(--gallery-fg);
+  transform: rotate(90deg);
+}
+.gallery-close span::before,
+.gallery-close span::after {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 1px;
+  background: currentColor;
+  content: "";
+}
+.gallery-close span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.gallery-close span::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.gallery-index-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  align-items: start;
+  gap: clamp(18px, 2.2vw, 38px) clamp(12px, 1.5vw, 26px);
+  padding: clamp(28px, 5vw, 80px) 22px 12vh;
+}
+.gallery-card {
+  grid-column: span var(--gallery-span);
+  align-self: start;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gallery-card-image {
+  display: block;
+  width: 100%;
+  padding: clamp(5px, .65vw, 11px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tile-fg) 48%, transparent);
+  background: var(--tile-bg);
+  color: var(--tile-fg);
+}
+.gallery-card-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: scale(1);
+  transition: transform .6s cubic-bezier(.2,.75,.2,1), filter .4s;
+}
+.gallery-card:hover .gallery-card-image img,
+.gallery-card:focus-visible .gallery-card-image img {
+  transform: scale(1.018);
+}
+.gallery-card-caption {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  gap: 4px 8px;
+  padding-top: 8px;
+  border-top: 1px solid currentColor;
+}
+.gallery-card-caption i {
+  grid-row: 1 / span 2;
+  font: normal 400 8px var(--font-mono);
+  letter-spacing: .06em;
+  opacity: .62;
+}
+.gallery-card-caption strong {
+  overflow: hidden;
+  font: 600 clamp(11px, 1.1vw, 15px)/1.05 var(--font-sans);
+  letter-spacing: -.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gallery-card-caption small {
+  font: 400 7px/1.3 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  opacity: .72;
+}
+@keyframes gallery-index-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .artwork-visual {
@@ -1479,10 +1651,43 @@ button { color: inherit; font: inherit; }
   .soundtrack-edit-grid > p { grid-column: auto; }
   .artist-line { gap: 6px; }
   .slideshow-toggle,
+  .gallery-toggle,
   .magnifier-toggle,
   .add-artwork-toggle,
   .delete-artwork-toggle,
   .admin-toggle { width: 25px; height: 25px; }
+  .gallery-index-header {
+    min-height: 95px;
+    padding:
+      calc(14px + env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      13px
+      max(14px, env(safe-area-inset-left));
+  }
+  .gallery-index-header h1 {
+    margin-top: 10px;
+    font-size: 43px;
+  }
+  .gallery-index-owner p { font-size: 13px; }
+  .gallery-close { width: 25px; height: 25px; }
+  .gallery-index-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 24px 10px;
+    padding:
+      26px
+      max(12px, env(safe-area-inset-right))
+      calc(11vh + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+  .gallery-card { grid-column: span var(--gallery-mobile-span); }
+  .gallery-card-image { padding: 4px; }
+  .gallery-card-caption {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 3px 5px;
+    padding-top: 6px;
+  }
+  .gallery-card-caption strong { font-size: 10px; }
+  .gallery-card-caption small { font-size: 6px; }
   .delete-panel,
   .admin-panel { padding: 22px 18px 18px; }
   .delete-panel h2 { font-size: 34px; }
@@ -1545,5 +1750,6 @@ button { color: inherit; font: inherit; }
   .ai-review-mark i,
   .ai-review-pulse i,
   .slideshow-stage,
+  .gallery-index,
   .soundtrack-title-track { animation: none !important; }
 }

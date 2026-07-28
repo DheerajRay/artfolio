@@ -37,6 +37,10 @@ for reliable review and web delivery.
 Local development stores artwork records and images in the ignored `.data`
 directory. Production uses Vercel Blob for both image files and artwork records.
 
+The future database and paginated-image migration is documented in
+[`docs/database-upgrade-plan.md`](docs/database-upgrade-plan.md) and is currently
+deferred.
+
 ## Vercel deployment
 
 Import the GitHub repository into Vercel as a Next.js project and connect a

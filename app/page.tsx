@@ -45,6 +45,8 @@ type DetailsSection = "description" | "notes" | "details";
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
 const SLIDESHOW_DELAY_MS = 5_000;
+const GALLERY_DESKTOP_SPANS = [5, 3, 4, 4, 5, 3, 3, 6, 3, 4, 4, 4];
+const GALLERY_MOBILE_SPANS = [6, 3, 3, 4, 2, 6, 3, 3, 6, 4, 2, 6];
 
 function createShuffledIndices(length: number, previousIndex?: number) {
   const indices = Array.from({ length }, (_, index) => index);
@@ -171,6 +173,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"none" | "magnify">("none");
   const [slideshowActive, setSlideshowActive] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [adminAuthorized, setAdminAuthorized] = useState(false);
@@ -255,7 +258,7 @@ export default function Home() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (dialogOpen || deletingArtwork || detailsArtwork || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+      if (galleryOpen || dialogOpen || deletingArtwork || detailsArtwork || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
       const next = Math.max(0, Math.min(artworks.length - 1, current + direction));
@@ -263,7 +266,16 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [current, dialogOpen, deletingArtwork, detailsArtwork, artworks.length]);
+  }, [current, dialogOpen, deletingArtwork, detailsArtwork, galleryOpen, artworks.length]);
+
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const closeGallery = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setGalleryOpen(false);
+    };
+    window.addEventListener("keydown", closeGallery);
+    return () => window.removeEventListener("keydown", closeGallery);
+  }, [galleryOpen]);
 
   useEffect(() => {
     if (magnifierRef.current) magnifierRef.current.style.opacity = "0";
@@ -311,9 +323,10 @@ export default function Home() {
   }, [artworks.length, slideshowActive]);
 
   useEffect(() => {
-    document.body.style.overflow = dialogOpen || adminDialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
+    document.body.style.overflow =
+      galleryOpen || dialogOpen || adminDialogOpen || deletingArtwork || detailsArtwork ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [adminDialogOpen, dialogOpen, deletingArtwork, detailsArtwork]);
+  }, [adminDialogOpen, dialogOpen, deletingArtwork, detailsArtwork, galleryOpen]);
 
   useEffect(() => {
     return () => {
@@ -465,6 +478,19 @@ export default function Home() {
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
   const slideshowArtwork = artworks[Math.min(slideshowIndex, artworks.length - 1)];
 
+  const openGallery = () => {
+    setViewMode("none");
+    setGalleryOpen(true);
+  };
+
+  const selectGalleryArtwork = (index: number) => {
+    setGalleryOpen(false);
+    setCurrent(index);
+    window.requestAnimationFrame(() => {
+      slideRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const startSlideshow = async () => {
     if (!presentationRef.current || artworks.length === 0) return;
     const order = createShuffledIndices(artworks.length);
@@ -536,11 +562,84 @@ export default function Home() {
         </div>
       )}
 
+      {galleryOpen && (
+        <section
+          className="gallery-index"
+          aria-label="Artwork gallery"
+          style={{
+            "--gallery-bg": currentArtwork?.background || "#F1EEE6",
+            "--gallery-fg": currentArtwork?.foreground || "#171612",
+          } as React.CSSProperties}
+        >
+          <header className="gallery-index-header">
+            <div>
+              <span>Collection index / {String(artworks.length).padStart(2, "0")} works</span>
+              <h1>Artfolio</h1>
+            </div>
+            <div className="gallery-index-owner">
+              <p>Dheeraj Ray</p>
+              <button
+                className="gallery-close"
+                type="button"
+                aria-label="Close gallery view"
+                title="Close gallery view"
+                onClick={() => setGalleryOpen(false)}
+              >
+                <span aria-hidden="true" />
+              </button>
+            </div>
+          </header>
+          <div className="gallery-index-grid">
+            {artworks.map((artwork, index) => (
+              <button
+                className="gallery-card"
+                key={artwork.id}
+                type="button"
+                aria-label={`View ${artwork.title}, ${artwork.year}`}
+                onClick={() => selectGalleryArtwork(index)}
+                style={{
+                  "--tile-bg": artwork.background,
+                  "--tile-fg": artwork.foreground,
+                  "--gallery-span": GALLERY_DESKTOP_SPANS[index % GALLERY_DESKTOP_SPANS.length],
+                  "--gallery-mobile-span": GALLERY_MOBILE_SPANS[index % GALLERY_MOBILE_SPANS.length],
+                } as React.CSSProperties}
+              >
+                <span className="gallery-card-image">
+                  {artwork.imageUrl && (
+                    <img
+                      src={artwork.imageUrl}
+                      alt=""
+                      loading={index < 6 ? "eager" : "lazy"}
+                    />
+                  )}
+                </span>
+                <span className="gallery-card-caption">
+                  <i>{String(index + 1).padStart(2, "0")}</i>
+                  <strong>{artwork.title}</strong>
+                  <small>{artwork.year} · {artwork.medium}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {artworks.length === 0 && (
         <section className="art-slide empty-gallery" aria-label="Artwork collection">
           <div className="slide-top-right">
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
+              {artworks.length > 0 && (
+                <button
+                  className="gallery-toggle"
+                  type="button"
+                  aria-label="Open gallery view"
+                  title="Open gallery view"
+                  onClick={openGallery}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              )}
               {adminChecked && (adminAuthorized ? (
                 <button
                   className="add-artwork-toggle"
@@ -589,6 +688,15 @@ export default function Home() {
           <div className="slide-top-right">
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
+              <button
+                className="gallery-toggle"
+                type="button"
+                aria-label="Open gallery view"
+                title="Open gallery view"
+                onClick={openGallery}
+              >
+                <span aria-hidden="true" />
+              </button>
               <button
                 className="slideshow-toggle"
                 type="button"
@@ -682,6 +790,7 @@ export default function Home() {
 
       {currentArtwork
         && !slideshowActive
+        && !galleryOpen
         && !dialogOpen
         && !detailsArtwork
         && !deletingArtwork

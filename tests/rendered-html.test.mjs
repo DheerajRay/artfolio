@@ -80,6 +80,30 @@ test("adds curated and AI-suggested artwork soundtracks", async () => {
   assert.match(artworkRoute, /Add a valid YouTube video link for the suggested soundtrack/);
 });
 
+test("provides a public, irregular gallery index", async () => {
+  const [page, styles, databasePlan] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/globals.css"),
+    source("docs/database-upgrade-plan.md"),
+  ]);
+
+  assert.match(page, /galleryOpen/);
+  assert.match(page, /Open gallery view/);
+  assert.match(page, /className="gallery-index-grid"/);
+  assert.match(page, /GALLERY_DESKTOP_SPANS/);
+  assert.match(page, /GALLERY_MOBILE_SPANS/);
+  assert.match(page, /selectGalleryArtwork/);
+  assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
+  assert.match(page, /loading=\{index < 6 \? "eager" : "lazy"\}/);
+  assert.match(styles, /grid-template-columns:\s*repeat\(12,/);
+  assert.match(styles, /grid-auto-flow:\s*dense/);
+  assert.match(styles, /grid-column:\s*span var\(--gallery-span\)/);
+  assert.match(styles, /grid-template-columns:\s*repeat\(6,/);
+  assert.match(styles, /\.gallery-card-image img[\s\S]*height:\s*auto/);
+  assert.match(databasePlan, /Status: parked/);
+  assert.match(databasePlan, /cursor-based pages/);
+});
+
 test("keeps mobile PWA dialogs inside safe areas", async () => {
   const [page, styles] = await Promise.all([
     source("app/page.tsx"),
