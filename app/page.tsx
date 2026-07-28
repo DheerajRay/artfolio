@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import ArtworkSoundtrackPlayer from "./artwork-soundtrack-player";
 import { ArtworkSoundtrack } from "./artwork-soundtracks";
 
@@ -241,6 +241,12 @@ export default function Home() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchMatches = useMemo(
+    () => artworks
+      .map((artwork, index) => ({ artwork, index }))
+      .filter(({ artwork }) => artworkMatchesSearch(artwork, searchQuery)),
+    [artworks, searchQuery],
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [adminAuthorized, setAdminAuthorized] = useState(false);
@@ -263,6 +269,7 @@ export default function Home() {
   const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
   const galleryCardRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const galleryGridRef = useRef<HTMLDivElement>(null);
   const presentationSearchInputRef = useRef<HTMLInputElement>(null);
   const slideshowIndexRef = useRef(0);
   const slideshowOrderRef = useRef<number[]>([]);
@@ -355,6 +362,43 @@ export default function Home() {
       window.removeEventListener("keydown", closeGallery);
     };
   }, [current, galleryOpen]);
+
+  useLayoutEffect(() => {
+    if (!galleryOpen || !galleryGridRef.current) return;
+    const grid = galleryGridRef.current;
+    let frame = 0;
+    let active = true;
+
+    const layoutGalleryCards = () => {
+      if (!active) return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const gridStyles = window.getComputedStyle(grid);
+        const rowHeight = Number.parseFloat(gridStyles.gridAutoRows);
+        const rowGap = Number.parseFloat(gridStyles.rowGap);
+        if (!rowHeight || Number.isNaN(rowGap)) return;
+
+        grid.querySelectorAll<HTMLElement>(".gallery-card").forEach((card) => {
+          card.style.gridRowEnd = "span 1";
+          const cardHeight = card.getBoundingClientRect().height;
+          const rowSpan = Math.max(1, Math.ceil((cardHeight + rowGap) / (rowHeight + rowGap)));
+          card.style.gridRowEnd = `span ${rowSpan}`;
+        });
+      });
+    };
+
+    const resizeObserver = new ResizeObserver(layoutGalleryCards);
+    resizeObserver.observe(grid);
+    grid.querySelectorAll("img").forEach((image) => resizeObserver.observe(image));
+    void document.fonts?.ready.then(layoutGalleryCards);
+    layoutGalleryCards();
+
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
+  }, [galleryOpen, searchMatches]);
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -571,12 +615,6 @@ export default function Home() {
 
   const currentArtwork = artworks[Math.min(current, artworks.length - 1)];
   const slideshowArtwork = artworks[Math.min(slideshowIndex, artworks.length - 1)];
-  const searchMatches = useMemo(
-    () => artworks
-      .map((artwork, index) => ({ artwork, index }))
-      .filter(({ artwork }) => artworkMatchesSearch(artwork, searchQuery)),
-    [artworks, searchQuery],
-  );
 
   const openGallery = () => {
     setViewMode("none");
@@ -777,7 +815,7 @@ export default function Home() {
               </button>
             </div>
           </header>
-          <div className="gallery-index-grid">
+          <div className="gallery-index-grid" ref={galleryGridRef}>
             {searchMatches.map(({ artwork, index }, visibleIndex) => (
               <button
                 className="gallery-card"

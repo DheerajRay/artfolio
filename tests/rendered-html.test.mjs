@@ -107,10 +107,15 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
   assert.match(page, /loading=\{visibleIndex < 6 \? "eager" : "lazy"\}/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,/);
+  assert.match(styles, /grid-auto-rows:\s*4px/);
   assert.match(styles, /grid-auto-flow:\s*dense/);
   assert.match(styles, /grid-column:\s*span var\(--gallery-span\)/);
   assert.match(styles, /grid-template-columns:\s*repeat\(6,/);
   assert.match(styles, /\.gallery-card-image img[\s\S]*height:\s*auto/);
+  assert.match(page, /useLayoutEffect/);
+  assert.match(page, /new ResizeObserver\(layoutGalleryCards\)/);
+  assert.match(page, /card\.style\.gridRowEnd = `span \$\{rowSpan\}`/);
+  assert.match(page, /Math\.ceil\(\(cardHeight \+ rowGap\) \/ \(rowHeight \+ rowGap\)\)/);
   assert.match(styles, /@media \(hover: hover\) and \(pointer: fine\)/);
   assert.match(styles, /rotate\(var\(--gallery-hover-tilt\)\)/);
   assert.match(styles, /\.gallery-card-image::after[\s\S]*border:\s*1px solid currentColor/);
