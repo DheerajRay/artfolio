@@ -45,8 +45,9 @@ type DetailsSection = "description" | "notes" | "details";
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
 const SLIDESHOW_DELAY_MS = 5_000;
-const GALLERY_DESKTOP_SPANS = [5, 3, 4, 4, 5, 3, 3, 6, 3, 4, 4, 4];
-const GALLERY_MOBILE_SPANS = [6, 3, 3, 4, 2, 6, 3, 3, 6, 4, 2, 6];
+const GALLERY_DESKTOP_SPANS = [4, 2, 3, 3, 4, 2, 2, 4, 3, 3, 2, 3];
+const GALLERY_MOBILE_SPANS = [3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3];
+const GALLERY_HOVER_TILTS = ["-.8deg", ".65deg", "-.45deg", ".85deg", "-.6deg", ".4deg"];
 
 function createShuffledIndices(length: number, previousIndex?: number) {
   const indices = Array.from({ length }, (_, index) => index);
@@ -602,6 +603,7 @@ export default function Home() {
                   "--tile-fg": artwork.foreground,
                   "--gallery-span": GALLERY_DESKTOP_SPANS[index % GALLERY_DESKTOP_SPANS.length],
                   "--gallery-mobile-span": GALLERY_MOBILE_SPANS[index % GALLERY_MOBILE_SPANS.length],
+                  "--gallery-hover-tilt": GALLERY_HOVER_TILTS[index % GALLERY_HOVER_TILTS.length],
                 } as React.CSSProperties}
               >
                 <span className="gallery-card-image">

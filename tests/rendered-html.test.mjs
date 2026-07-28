@@ -92,6 +92,7 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(page, /className="gallery-index-grid"/);
   assert.match(page, /GALLERY_DESKTOP_SPANS/);
   assert.match(page, /GALLERY_MOBILE_SPANS/);
+  assert.match(page, /GALLERY_HOVER_TILTS/);
   assert.match(page, /selectGalleryArtwork/);
   assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
   assert.match(page, /loading=\{index < 6 \? "eager" : "lazy"\}/);
@@ -100,6 +101,9 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(styles, /grid-column:\s*span var\(--gallery-span\)/);
   assert.match(styles, /grid-template-columns:\s*repeat\(6,/);
   assert.match(styles, /\.gallery-card-image img[\s\S]*height:\s*auto/);
+  assert.match(styles, /@media \(hover: hover\) and \(pointer: fine\)/);
+  assert.match(styles, /rotate\(var\(--gallery-hover-tilt\)\)/);
+  assert.match(styles, /\.gallery-card-image::after/);
   assert.match(databasePlan, /Status: parked/);
   assert.match(databasePlan, /cursor-based pages/);
 });
