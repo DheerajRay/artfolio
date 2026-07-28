@@ -649,17 +649,15 @@ button { color: inherit; font: inherit; }
 .gallery-card-image::after {
   position: absolute;
   z-index: 2;
-  inset: -35% -70%;
-  background: linear-gradient(
-    112deg,
-    transparent 38%,
-    color-mix(in srgb, var(--tile-fg) 22%, transparent) 49%,
-    transparent 60%
-  );
+  inset: clamp(8px, 1vw, 15px);
+  border: 1px solid currentColor;
   content: "";
+  opacity: 0;
   pointer-events: none;
-  transform: translateX(-55%);
-  transition: transform .85s cubic-bezier(.16,.8,.24,1);
+  transform: translate(7px, -6px) rotate(-1.2deg) scale(.97);
+  transition:
+    opacity .3s ease,
+    transform .65s cubic-bezier(.16,.8,.24,1);
 }
 .gallery-card-image img {
   position: relative;
@@ -682,6 +680,11 @@ button { color: inherit; font: inherit; }
   font: normal 400 8px var(--font-mono);
   letter-spacing: .06em;
   opacity: .62;
+  transform: translateY(0) rotate(0);
+  transform-origin: left top;
+  transition:
+    opacity .3s ease,
+    transform .5s cubic-bezier(.16,.8,.24,1);
 }
 .gallery-card-caption strong {
   display: block;
@@ -736,7 +739,6 @@ button { color: inherit; font: inherit; }
   .gallery-card:hover,
   .gallery-card:focus-visible {
     z-index: 2;
-    filter: saturate(1.06);
     transform: translateY(-8px) rotate(var(--gallery-hover-tilt));
   }
   .gallery-card:hover .gallery-card-image,
@@ -746,12 +748,17 @@ button { color: inherit; font: inherit; }
   }
   .gallery-card:hover .gallery-card-image::after,
   .gallery-card:focus-visible .gallery-card-image::after {
-    transform: translateX(55%);
+    opacity: .46;
+    transform: translate(0, 0) rotate(.45deg) scale(1);
   }
   .gallery-card:hover .gallery-card-image img,
   .gallery-card:focus-visible .gallery-card-image img {
-    filter: contrast(1.025);
-    transform: scale(1.035);
+    transform: translate(-2px, 2px) scale(1.026);
+  }
+  .gallery-card:hover .gallery-card-caption i,
+  .gallery-card:focus-visible .gallery-card-caption i {
+    opacity: 1;
+    transform: translateY(-2px) rotate(-12deg);
   }
   .gallery-card:hover .gallery-card-caption strong,
   .gallery-card:focus-visible .gallery-card-caption strong {

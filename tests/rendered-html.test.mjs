@@ -113,7 +113,12 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(styles, /\.gallery-card-image img[\s\S]*height:\s*auto/);
   assert.match(styles, /@media \(hover: hover\) and \(pointer: fine\)/);
   assert.match(styles, /rotate\(var\(--gallery-hover-tilt\)\)/);
-  assert.match(styles, /\.gallery-card-image::after/);
+  assert.match(styles, /\.gallery-card-image::after[\s\S]*border:\s*1px solid currentColor/);
+  assert.match(styles, /\.gallery-card:hover \.gallery-card-caption i[\s\S]*rotate\(-12deg\)/);
+  assert.doesNotMatch(
+    styles.match(/\.gallery-card-image::after\s*\{[\s\S]*?\}/)?.[0] || "",
+    /linear-gradient/,
+  );
   assert.match(databasePlan, /Status: parked/);
   assert.match(databasePlan, /cursor-based pages/);
 });
