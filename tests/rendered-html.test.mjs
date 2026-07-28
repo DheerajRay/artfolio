@@ -9,7 +9,10 @@ async function source(path) {
 }
 
 test("shows only uploaded artworks in date order", async () => {
-  const page = await source("app/page.tsx");
+  const [page, styles] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/globals.css"),
+  ]);
 
   assert.doesNotMatch(page, /mockArtworks|When the Sun Forgets/);
   assert.match(page, /sortArtworksByDate/);
@@ -30,6 +33,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /Delete artwork/);
   assert.doesNotMatch(page, /spotlight/i);
   assert.match(page, /Start fullscreen slideshow/);
+  assert.match(styles, /\.magnifier-icon::before[\s\S]*1px 6px no-repeat/);
+  assert.match(styles, /\.search-toggle > span[\s\S]*border-radius:\s*50%/);
   assert.match(page, /requestFullscreen/);
   assert.match(page, /SLIDESHOW_DELAY_MS = 5_000/);
   assert.match(page, /createShuffledIndices/);

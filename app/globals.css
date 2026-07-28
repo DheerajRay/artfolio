@@ -293,6 +293,18 @@ button { color: inherit; font: inherit; }
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
+.magnifier-icon::before {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  background:
+    linear-gradient(currentColor, currentColor) center / 6px 1px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1px 6px no-repeat;
+  content: "";
+  transform: translate(-50%, -50%);
+}
 .magnifier-icon::after {
   content: "";
   position: absolute;
