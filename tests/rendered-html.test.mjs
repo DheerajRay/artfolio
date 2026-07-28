@@ -94,6 +94,9 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(page, /GALLERY_MOBILE_SPANS/);
   assert.match(page, /GALLERY_HOVER_TILTS/);
   assert.match(page, /selectGalleryArtwork/);
+  assert.match(page, /galleryCardRefs\.current\[current\]\?\.scrollIntoView/);
+  assert.match(page, /block: "center"/);
+  assert.match(page, /aria-current=\{index === current/);
   assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
   assert.match(page, /loading=\{index < 6 \? "eager" : "lazy"\}/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,/);

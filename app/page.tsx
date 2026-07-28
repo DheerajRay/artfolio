@@ -196,6 +196,7 @@ export default function Home() {
   const [dialogError, setDialogError] = useState("");
   const presentationRef = useRef<HTMLElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
+  const galleryCardRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const slideshowIndexRef = useRef(0);
   const slideshowOrderRef = useRef<number[]>([]);
   const slideshowPositionRef = useRef(0);
@@ -274,9 +275,19 @@ export default function Home() {
     const closeGallery = (event: KeyboardEvent) => {
       if (event.key === "Escape") setGalleryOpen(false);
     };
+    const frame = window.requestAnimationFrame(() => {
+      galleryCardRefs.current[current]?.scrollIntoView({
+        behavior: "auto",
+        block: "center",
+        inline: "nearest",
+      });
+    });
     window.addEventListener("keydown", closeGallery);
-    return () => window.removeEventListener("keydown", closeGallery);
-  }, [galleryOpen]);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", closeGallery);
+    };
+  }, [current, galleryOpen]);
 
   useEffect(() => {
     if (magnifierRef.current) magnifierRef.current.style.opacity = "0";
@@ -595,8 +606,10 @@ export default function Home() {
               <button
                 className="gallery-card"
                 key={artwork.id}
+                ref={(node) => { galleryCardRefs.current[index] = node; }}
                 type="button"
                 aria-label={`View ${artwork.title}, ${artwork.year}`}
+                aria-current={index === current ? "true" : undefined}
                 onClick={() => selectGalleryArtwork(index)}
                 style={{
                   "--tile-bg": artwork.background,

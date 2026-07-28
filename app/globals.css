@@ -527,6 +527,12 @@ button { color: inherit; font: inherit; }
   letter-spacing: .06em;
   opacity: .72;
 }
+.gallery-card[aria-current="true"] .gallery-card-caption {
+  border-top-width: 2px;
+}
+.gallery-card[aria-current="true"] .gallery-card-caption i {
+  opacity: 1;
+}
 @media (hover: hover) and (pointer: fine) {
   .gallery-card:hover,
   .gallery-card:focus-visible {
