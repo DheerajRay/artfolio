@@ -18,6 +18,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /sortArtworksByDate/);
   assert.match(page, /b\.artworkDate/);
   assert.match(page, /No artworks yet/);
+  assert.match(page, /EditorialLoadingState/);
+  assert.match(page, /Assembling the collection/);
   assert.match(page, /Add artwork/);
   assert.match(page, /editorial-mobile-nav/);
   assert.match(page, /classification-index/);
@@ -135,6 +137,9 @@ test("searches artwork metadata in both portfolio views", async () => {
   assert.match(styles, /\.presentation-search/);
   assert.match(styles, /\.gallery-index-search/);
   assert.match(styles, /\.gallery-empty-results/);
+  assert.match(styles, /\.gallery-empty-results > strong[\s\S]*var\(--font-sans\)/);
+  assert.doesNotMatch(styles, /\.gallery-empty-results[\s\S]{0,180}font:\s*italic/);
+  assert.match(styles, /\.collection-loading\.ai-review-loading/);
   assert.match(styles, /\.artwork-search-field input[\s\S]*font-size:\s*16px/);
 });
 

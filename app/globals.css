@@ -151,14 +151,15 @@ button { color: inherit; font: inherit; }
   background: #f7f5ef;
   color: #171612;
 }
-.empty-gallery > p {
+.empty-state-message {
   position: absolute;
   left: 50%;
   top: 50%;
   margin: 0;
   transform: translate(-50%, -50%);
-  font: italic 400 clamp(28px, 4vw, 58px) var(--font-display);
-  letter-spacing: -.045em;
+  font: 500 9px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .09em;
 }
 
 .slide-index {
@@ -706,12 +707,30 @@ button { color: inherit; font: inherit; }
 }
 .gallery-empty-results {
   grid-column: 1 / -1;
-  min-height: 45vh;
-  margin: 0;
-  padding-top: 12vh;
-  font: italic 400 clamp(28px, 4vw, 58px)/.95 var(--font-display);
-  text-align: center;
-  letter-spacing: -.045em;
+  align-self: center;
+  width: min(430px, 100%);
+  min-height: 42vh;
+  margin: 8vh auto 0;
+  padding-top: 11px;
+  border-top: 1px solid currentColor;
+  text-align: left;
+}
+.gallery-empty-results > span {
+  display: block;
+  margin-bottom: 13px;
+  font: 500 7px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+}
+.gallery-empty-results > strong {
+  display: block;
+  font: 600 clamp(17px, 1.7vw, 24px)/1 var(--font-sans);
+  letter-spacing: -.04em;
+}
+.gallery-empty-results > p {
+  max-width: 34em;
+  margin: 9px 0 0;
+  font: 400 11px/1.45 var(--font-sans);
 }
 @media (hover: hover) and (pointer: fine) {
   .gallery-card:hover,
@@ -1428,6 +1447,12 @@ button { color: inherit; font: inherit; }
   background:
     radial-gradient(circle at 50% 44%, rgba(223, 164, 34, .11), transparent 28%),
     #f1eee6;
+}
+.collection-loading.ai-review-loading {
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  color: #171612;
 }
 .ai-review-loading > div:nth-child(2) {
   display: grid;

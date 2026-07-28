@@ -197,6 +197,38 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
   );
 }
 
+function EditorialLoadingState({
+  eyebrow,
+  title,
+  description,
+  className = "",
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  className?: string;
+}) {
+  return (
+    <div className={`ai-review-loading ${className}`.trim()} role="status" aria-live="polite">
+      <div className="ai-review-mark" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div>
+        <span>{eyebrow}</span>
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="ai-review-pulse" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [uploadedArtworks, setUploadedArtworks] = useState<Artwork[]>([]);
   const artworks = useMemo(() => sortArtworksByDate(uploadedArtworks), [uploadedArtworks]);
@@ -780,9 +812,11 @@ export default function Home() {
               </button>
             ))}
             {searchMatches.length === 0 && (
-              <p className="gallery-empty-results">
-                No works match “{searchQuery.trim()}”.
-              </p>
+              <div className="gallery-empty-results" role="status">
+                <span>Search index / 00 results</span>
+                <strong>No works match</strong>
+                <p>“{searchQuery.trim()}” isn’t present in the current collection metadata.</p>
+              </div>
             )}
           </div>
         </section>
@@ -827,7 +861,16 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <p>{loadingArtworks ? "Loading collection…" : "No artworks yet."}</p>
+          {loadingArtworks ? (
+            <EditorialLoadingState
+              className="collection-loading"
+              eyebrow="Collection loading"
+              title="Assembling the collection"
+              description="Preparing the latest works, their details, colors, and viewing order."
+            />
+          ) : (
+            <p className="empty-state-message">No artworks yet.</p>
+          )}
         </section>
       )}
 
@@ -1158,23 +1201,11 @@ export default function Home() {
             </div>
 
             {workflowState === "analyzing" ? (
-              <div className="ai-review-loading" role="status" aria-live="polite">
-                <div className="ai-review-mark" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </div>
-                <div>
-                  <span>OpenAI review in progress</span>
-                  <h3>Looking closely at the work</h3>
-                  <p>Reading its composition, visual language, palette, and the details that reward a second look.</p>
-                </div>
-                <div className="ai-review-pulse" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </div>
+              <EditorialLoadingState
+                eyebrow="OpenAI review in progress"
+                title="Looking closely at the work"
+                description="Reading its composition, visual language, palette, and the details that reward a second look."
+              />
             ) : (
             <div className="dialog-body">
               <div className={`upload-preview ${previewUrl ? "has-image" : ""}`}>
