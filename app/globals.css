@@ -18,7 +18,10 @@ body {
 button { color: inherit; font: inherit; }
 ::selection { background: #171612; color: #f1eee6; }
 
-.presentation { width: 100%; }
+.presentation {
+  --info-rail-width: clamp(280px, 24vw, 390px);
+  width: 100%;
+}
 .presentation.viewing-tool-on,
 .presentation.viewing-tool-on button {
   cursor: none;

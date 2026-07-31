@@ -45,6 +45,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /fullscreenchange/);
   assert.match(page, /slideshow-stage/);
   assert.match(styles, /--info-rail-width:\s*clamp\(280px, 24vw, 390px\)/);
+  assert.match(styles, /\.presentation\s*\{[\s\S]*--info-rail-width:\s*clamp\(280px, 24vw, 390px\)/);
+  assert.match(styles, /\.magnifier-canvas[\s\S]*width:\s*100vw[\s\S]*height:\s*100vh/);
   assert.match(styles, /\.slideshow-stage \.artwork-visual\s*\{\s*inset:\s*4\.5% calc\(var\(--info-rail-width\) \+ 38px\) 4\.5% max\(4\.5%, 28px\)/);
   assert.match(styles, /\.artwork-description[\s\S]*width:\s*var\(--info-rail-width\)/);
   assert.match(styles, /\.slideshow-stage \.artwork-visual\s*\{\s*inset:\s*17% 1% 29%/);
