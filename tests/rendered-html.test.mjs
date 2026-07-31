@@ -44,6 +44,8 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /slideshowOrderRef/);
   assert.match(page, /fullscreenchange/);
   assert.match(page, /slideshow-stage/);
+  assert.match(styles, /\.slideshow-stage \.artwork-visual\s*\{\s*inset:\s*4\.5% 13%/);
+  assert.match(styles, /\.slideshow-stage \.artwork-visual\s*\{\s*inset:\s*17% 1% 29%/);
   assert.match(page, /slideshow-title/);
   assert.match(page, /slideshow-description/);
   assert.match(page, /slideshow-meta/);
@@ -55,6 +57,13 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /slideRefs\.current\[targetIndex\]\?\.scrollIntoView/);
   assert.doesNotMatch(page, /slideRefs\.current\[0\]\?\.scrollIntoView/);
   assert.match(page, /ArtworkSoundtrackPlayer/);
+  assert.match(page, /touchDistance/);
+  assert.match(page, /constrainPan/);
+  assert.match(page, /onTouchStart=\{startImageGesture\}/);
+  assert.match(page, /onTouchMove=\{moveImageGesture\}/);
+  assert.match(page, /Math\.min\(3\.5,/);
+  assert.match(styles, /\.artwork-image\s*\{[\s\S]*touch-action:\s*pan-y/);
+  assert.match(styles, /\.artwork-image\.is-image-zoomed\s*\{\s*touch-action:\s*none/);
   assert.doesNotMatch(page, /Scroll to next work/);
 });
 

@@ -189,10 +189,146 @@ function artworkMatchesSearch(artwork: Artwork, query: string) {
   return tokens.every((token) => searchableText.includes(token));
 }
 
+function touchDistance(touches: React.TouchList) {
+  const horizontal = touches[1].clientX - touches[0].clientX;
+  const vertical = touches[1].clientY - touches[0].clientY;
+  return Math.hypot(horizontal, vertical);
+}
+
+function constrainPan(value: number, dimension: number, scale: number) {
+  const limit = Math.max(0, dimension * (scale - 1) * .5);
+  return Math.max(-limit, Math.min(limit, value));
+}
+
 function ArtworkVisual({ artwork }: { artwork: Artwork }) {
+  const visualRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const lastTapRef = useRef(0);
+  const gestureRef = useRef({
+    mode: "none" as "none" | "pinch" | "pan",
+    scale: 1,
+    panX: 0,
+    panY: 0,
+    startDistance: 0,
+    startScale: 1,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  });
+
+  const applyImageTransform = () => {
+    const image = imageRef.current;
+    const visual = visualRef.current;
+    if (!image || !visual) return;
+    const gesture = gestureRef.current;
+    image.style.transform = gesture.scale <= 1.001
+      ? ""
+      : `translate3d(${gesture.panX}px, ${gesture.panY}px, 0) scale(${gesture.scale})`;
+    visual.classList.toggle("is-image-zoomed", gesture.scale > 1.001);
+  };
+
+  const resetImageZoom = () => {
+    const gesture = gestureRef.current;
+    gesture.mode = "none";
+    gesture.scale = 1;
+    gesture.panX = 0;
+    gesture.panY = 0;
+    if (imageRef.current) {
+      imageRef.current.style.transform = "";
+      imageRef.current.style.transformOrigin = "";
+    }
+    visualRef.current?.classList.remove("is-image-zoomed", "is-touch-zooming");
+  };
+
+  const startImageGesture = (event: React.TouchEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current;
+    if (event.touches.length >= 2) {
+      event.preventDefault();
+      gesture.mode = "pinch";
+      gesture.startDistance = touchDistance(event.touches);
+      gesture.startScale = gesture.scale;
+      gesture.startPanX = gesture.panX;
+      gesture.startPanY = gesture.panY;
+
+      if (gesture.scale <= 1.001 && imageRef.current && visualRef.current) {
+        const bounds = visualRef.current.getBoundingClientRect();
+        const midpointX = (event.touches[0].clientX + event.touches[1].clientX) * .5 - bounds.left;
+        const midpointY = (event.touches[0].clientY + event.touches[1].clientY) * .5 - bounds.top;
+        imageRef.current.style.transformOrigin = `${midpointX}px ${midpointY}px`;
+      }
+      visualRef.current?.classList.add("is-touch-zooming");
+    } else if (event.touches.length === 1 && gesture.scale > 1.001) {
+      event.preventDefault();
+      gesture.mode = "pan";
+      gesture.startX = event.touches[0].clientX;
+      gesture.startY = event.touches[0].clientY;
+      gesture.startPanX = gesture.panX;
+      gesture.startPanY = gesture.panY;
+      visualRef.current?.classList.add("is-touch-zooming");
+    }
+  };
+
+  const moveImageGesture = (event: React.TouchEvent<HTMLDivElement>) => {
+    const visual = visualRef.current;
+    if (!visual) return;
+    const gesture = gestureRef.current;
+    const bounds = visual.getBoundingClientRect();
+
+    if (gesture.mode === "pinch" && event.touches.length >= 2) {
+      event.preventDefault();
+      const distanceRatio = touchDistance(event.touches) / Math.max(gesture.startDistance, 1);
+      gesture.scale = Math.max(1, Math.min(3.5, gesture.startScale * distanceRatio));
+      gesture.panX = constrainPan(gesture.startPanX, bounds.width, gesture.scale);
+      gesture.panY = constrainPan(gesture.startPanY, bounds.height, gesture.scale);
+      applyImageTransform();
+    } else if (gesture.mode === "pan" && event.touches.length === 1 && gesture.scale > 1.001) {
+      event.preventDefault();
+      gesture.panX = constrainPan(
+        gesture.startPanX + event.touches[0].clientX - gesture.startX,
+        bounds.width,
+        gesture.scale,
+      );
+      gesture.panY = constrainPan(
+        gesture.startPanY + event.touches[0].clientY - gesture.startY,
+        bounds.height,
+        gesture.scale,
+      );
+      applyImageTransform();
+    }
+  };
+
+  const finishImageGesture = (event: React.TouchEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current;
+    const completedMode = gesture.mode;
+    if (event.touches.length >= 2) return;
+    gesture.mode = "none";
+    visualRef.current?.classList.remove("is-touch-zooming");
+
+    if (gesture.scale <= 1.02) {
+      resetImageZoom();
+      return;
+    }
+
+    if (event.touches.length === 0 && completedMode !== "pinch") {
+      const now = Date.now();
+      if (now - lastTapRef.current < 320) resetImageZoom();
+      lastTapRef.current = now;
+    }
+  };
+
   return (
-    <div className="artwork-visual artwork-image" aria-label={artwork.title} role="img">
-      {artwork.imageUrl && <img src={artwork.imageUrl} alt={artwork.title} />}
+    <div
+      ref={visualRef}
+      className="artwork-visual artwork-image"
+      aria-label={artwork.title}
+      role="img"
+      onTouchStart={startImageGesture}
+      onTouchMove={moveImageGesture}
+      onTouchEnd={finishImageGesture}
+      onTouchCancel={resetImageZoom}
+    >
+      {artwork.imageUrl && <img ref={imageRef} src={artwork.imageUrl} alt={artwork.title} />}
     </div>
   );
 }

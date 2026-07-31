@@ -45,7 +45,7 @@ button { color: inherit; font: inherit; }
   animation: slideshow-reveal .7s ease both;
 }
 .slideshow-stage .artwork-visual {
-  inset: 0;
+  inset: 4.5% 13%;
 }
 .slide-top-right.slideshow-header {
   width: min(430px, 36vw);
@@ -785,6 +785,7 @@ button { color: inherit; font: inherit; }
 }
 .artwork-image {
   display: block;
+  touch-action: pan-y;
 }
 .artwork-image img {
   position: absolute;
@@ -794,7 +795,11 @@ button { color: inherit; font: inherit; }
   height: 100%;
   object-fit: contain;
   object-position: center;
+  transition: transform .18s ease-out;
+  will-change: transform;
 }
+.artwork-image.is-image-zoomed { touch-action: none; }
+.artwork-image.is-touch-zooming img { transition: none; }
 
 .visual-sun .form-a {
   width: 48%; height: 76%; left: 22%; top: 10%;
@@ -1819,6 +1824,7 @@ button { color: inherit; font: inherit; }
   .title-block { margin-top: 25px; grid-template-columns: 32px 1fr; gap: 10px; }
   .title-block h1 { font-size: 31px; }
   .artwork-visual { inset: 17% 1% 29%; }
+  .slideshow-stage .artwork-visual { inset: 17% 1% 29%; }
   .side-progress { display: none; }
   .scroll-suggestion {
     left: max(14px, env(safe-area-inset-left));
