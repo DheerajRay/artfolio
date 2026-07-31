@@ -474,18 +474,25 @@ export default function Home() {
   }, [artworks]);
 
   useEffect(() => {
-    if (!pendingArtworkId) return;
+    if (!pendingArtworkId || galleryOpen || searchOpen || dialogOpen) return;
     const targetIndex = artworks.findIndex((artwork) => artwork.id === pendingArtworkId);
     if (targetIndex < 0) return;
 
-    const frame = window.requestAnimationFrame(() => {
-      setCurrent(targetIndex);
-      slideRefs.current[targetIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setPendingArtworkId(null);
+    let navigationFrame = 0;
+    const overlayFrame = window.requestAnimationFrame(() => {
+      navigationFrame = window.requestAnimationFrame(() => {
+        setCurrent(targetIndex);
+        document.documentElement.style.background = artworks[targetIndex]?.background || "#D94A2E";
+        slideRefs.current[targetIndex]?.scrollIntoView({ behavior: "auto", block: "start" });
+        setPendingArtworkId(null);
+      });
     });
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [artworks, pendingArtworkId]);
+    return () => {
+      window.cancelAnimationFrame(overlayFrame);
+      window.cancelAnimationFrame(navigationFrame);
+    };
+  }, [artworks, dialogOpen, galleryOpen, pendingArtworkId, searchOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -778,12 +785,12 @@ export default function Home() {
   };
 
   const selectArtworkFromSearch = (index: number) => {
+    const selectedArtwork = artworks[index];
+    if (!selectedArtwork) return;
+    setCurrent(index);
+    setPendingArtworkId(selectedArtwork.id);
     setGalleryOpen(false);
     setSearchOpen(false);
-    setCurrent(index);
-    window.requestAnimationFrame(() => {
-      slideRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   };
 
   const selectGalleryArtwork = (index: number) => {

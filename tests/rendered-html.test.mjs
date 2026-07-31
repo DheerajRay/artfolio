@@ -59,6 +59,9 @@ test("shows only uploaded artworks in date order", async () => {
   assert.doesNotMatch(page, /document\.exitFullscreen\(\)/);
   assert.match(page, /artwork\.id === pendingArtworkId/);
   assert.match(page, /slideRefs\.current\[targetIndex\]\?\.scrollIntoView/);
+  assert.match(page, /behavior:\s*"auto", block:\s*"start"/);
+  assert.match(page, /!pendingArtworkId \|\| galleryOpen \|\| searchOpen \|\| dialogOpen/);
+  assert.match(page, /setPendingArtworkId\(selectedArtwork\.id\)/);
   assert.doesNotMatch(page, /slideRefs\.current\[0\]\?\.scrollIntoView/);
   assert.match(page, /ArtworkSoundtrackPlayer/);
   assert.match(page, /PRESENTATION_IMAGE_BUFFER = 2/);
@@ -125,7 +128,7 @@ test("provides a public, irregular gallery index", async () => {
   assert.match(page, /galleryCardRefs\.current\[current\]\?\.scrollIntoView/);
   assert.match(page, /block: "center"/);
   assert.match(page, /aria-current=\{index === current/);
-  assert.match(page, /slideRefs\.current\[index\]\?\.scrollIntoView/);
+  assert.match(page, /setPendingArtworkId\(selectedArtwork\.id\)/);
   assert.match(page, /loading=\{visibleIndex < 6 \? "eager" : "lazy"\}/);
   assert.match(styles, /grid-template-columns:\s*repeat\(12,/);
   assert.match(styles, /grid-auto-rows:\s*4px/);
@@ -175,11 +178,14 @@ test("searches artwork metadata in both portfolio views", async () => {
 });
 
 test("keeps mobile PWA dialogs inside safe areas", async () => {
-  const [page, styles] = await Promise.all([
+  const [page, styles, layout] = await Promise.all([
     source("app/page.tsx"),
     source("app/globals.css"),
+    source("app/layout.tsx"),
   ]);
 
+  assert.match(layout, /maximumScale:\s*1/);
+  assert.match(layout, /userScalable:\s*false/);
   assert.match(styles, /\.editorial-panel > header[\s\S]*safe-area-inset-top/);
   assert.match(styles, /\.dialog-header[\s\S]*safe-area-inset-top/);
   assert.match(styles, /\.dialog-panel[\s\S]*100dvh/);
