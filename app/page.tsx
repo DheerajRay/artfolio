@@ -45,6 +45,7 @@ type DetailsSection = "description" | "notes" | "details";
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_API_IMAGE_BYTES = 3 * 1024 * 1024;
 const SLIDESHOW_DELAY_MS = 5_000;
+const PRESENTATION_IMAGE_BUFFER = 2;
 const GALLERY_DESKTOP_SPANS = [4, 2, 3, 3, 4, 2, 2, 4, 3, 3, 2, 3];
 const GALLERY_MOBILE_SPANS = [3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3];
 const GALLERY_HOVER_TILTS = ["-.8deg", ".65deg", "-.45deg", ".85deg", "-.6deg", ".4deg"];
@@ -200,7 +201,15 @@ function constrainPan(value: number, dimension: number, scale: number) {
   return Math.max(-limit, Math.min(limit, value));
 }
 
-function ArtworkVisual({ artwork }: { artwork: Artwork }) {
+function ArtworkVisual({
+  artwork,
+  loadImage = true,
+  priority = false,
+}: {
+  artwork: Artwork;
+  loadImage?: boolean;
+  priority?: boolean;
+}) {
   const visualRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const lastTapRef = useRef(0);
@@ -320,15 +329,25 @@ function ArtworkVisual({ artwork }: { artwork: Artwork }) {
   return (
     <div
       ref={visualRef}
-      className="artwork-visual artwork-image"
+      className={`artwork-visual artwork-image ${loadImage ? "" : "is-deferred"}`.trim()}
       aria-label={artwork.title}
+      aria-busy={!loadImage}
       role="img"
       onTouchStart={startImageGesture}
       onTouchMove={moveImageGesture}
       onTouchEnd={finishImageGesture}
       onTouchCancel={resetImageZoom}
     >
-      {artwork.imageUrl && <img ref={imageRef} src={artwork.imageUrl} alt={artwork.title} />}
+      {loadImage && artwork.imageUrl && (
+        <img
+          ref={imageRef}
+          src={artwork.imageUrl}
+          alt={artwork.title}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : "auto"}
+        />
+      )}
     </div>
   );
 }
@@ -803,7 +822,7 @@ export default function Home() {
       ref={presentationRef}
       className={`presentation ${viewMode !== "none" ? "viewing-tool-on" : ""} ${slideshowActive ? "slideshow-active" : ""}`}
     >
-      {currentArtwork && (
+      {viewMode === "magnify" && currentArtwork && (
         <div
           ref={magnifierRef}
           className={`magnifier-lens ${viewMode === "magnify" ? "active" : ""}`}
@@ -811,7 +830,7 @@ export default function Home() {
           aria-hidden="true"
         >
           <div className="magnifier-canvas" ref={magnifierCanvasRef}>
-            <ArtworkVisual artwork={currentArtwork} />
+            <ArtworkVisual artwork={currentArtwork} priority />
           </div>
           <span className="magnifier-center" />
         </div>
@@ -825,7 +844,7 @@ export default function Home() {
             "--slide-fg": slideshowArtwork.foreground,
           } as React.CSSProperties}
         >
-          <ArtworkVisual artwork={slideshowArtwork} />
+          <ArtworkVisual artwork={slideshowArtwork} priority />
           <div className="slide-top-right slideshow-header">
             <div className="artist-line">
               <p className="artist-name">Dheeraj Ray</p>
@@ -975,6 +994,8 @@ export default function Home() {
                       src={artwork.imageUrl}
                       alt=""
                       loading={visibleIndex < 6 ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={visibleIndex < 6 ? "auto" : "low"}
                     />
                   )}
                 </span>
@@ -1150,7 +1171,11 @@ export default function Home() {
             </div>
           </div>
 
-          <ArtworkVisual artwork={artwork} />
+          <ArtworkVisual
+            artwork={artwork}
+            loadImage={Math.abs(index - current) <= PRESENTATION_IMAGE_BUFFER}
+            priority={index === current}
+          />
 
           <div className="artwork-description">
             <span>

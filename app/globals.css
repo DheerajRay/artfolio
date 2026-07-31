@@ -789,6 +789,9 @@ button { color: inherit; font: inherit; }
   display: block;
   touch-action: pan-y;
 }
+.artwork-image.is-deferred {
+  pointer-events: none;
+}
 .artwork-image img {
   position: absolute;
   inset: 0;

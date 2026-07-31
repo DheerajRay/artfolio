@@ -59,6 +59,14 @@ test("shows only uploaded artworks in date order", async () => {
   assert.match(page, /slideRefs\.current\[targetIndex\]\?\.scrollIntoView/);
   assert.doesNotMatch(page, /slideRefs\.current\[0\]\?\.scrollIntoView/);
   assert.match(page, /ArtworkSoundtrackPlayer/);
+  assert.match(page, /PRESENTATION_IMAGE_BUFFER = 2/);
+  assert.match(page, /Math\.abs\(index - current\) <= PRESENTATION_IMAGE_BUFFER/);
+  assert.match(page, /loadImage=\{Math\.abs/);
+  assert.match(page, /loading=\{priority \? "eager" : "lazy"\}/);
+  assert.match(page, /viewMode === "magnify" && currentArtwork/);
+  assert.match(page, /decoding="async"/);
+  assert.match(page, /fetchPriority=\{visibleIndex < 6 \? "auto" : "low"\}/);
+  assert.match(styles, /\.artwork-image\.is-deferred\s*\{[\s\S]*pointer-events:\s*none/);
   assert.match(page, /touchDistance/);
   assert.match(page, /constrainPan/);
   assert.match(page, /onTouchStart=\{startImageGesture\}/);
